@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelectChat React Example</title>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <!-- Load React dependencies -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/styled-components/dist/styled-components.min.js"></script>
+  
+  <!-- Load the component from your build -->
+  <script src="/dist/select-chat.umd.js"></script>
+  
+  <!-- Load the example app -->
+  <script>
+    // Simple React renderer for the example
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create a div to mount the React component
+      const mountPoint = document.getElementById('root');
+      
+      // Display a message about the React example
+      mountPoint.innerHTML = `
+        <div style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: system-ui, sans-serif;">
+          <h1>SelectChat React Example</h1>
+          <p>The React example requires a build step to compile TypeScript and JSX.</p>
+          <p>For a working example, see the <a href="/basic">Basic Example</a> which uses the pre-built UMD version.</p>
+          <p>To run the full React example:</p>
+          <ol>
+            <li>Clone the repository</li>
+            <li>Run <code>npm install</code></li>
+            <li>Run <code>npm start</code></li>
+          </ol>
+          <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+            <h2>Component Preview</h2>
+            <div id="preview" style="min-height: 200px; margin-top: 20px;"></div>
+          </div>
+        </div>
+      `;
+      
+      // Initialize basic version
+      if (typeof SelectChat !== 'undefined' && SelectChat.init) {
+        SelectChat.init({
+          container: '#preview',
+          apiKey: 'YOUR_OPENAI_API_KEY', // Replace with your API key
+          theme: 'light',
+          userPreferences: {
+            showTimestamps: true,
+            position: 'float'
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html> 

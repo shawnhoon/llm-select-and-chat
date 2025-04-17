@@ -1,0 +1,235 @@
+# Overview
+SelectChat is a modular React component that can be integrated into any web application, allowing users to select text on a webpage and instantly chat about it with an AI assistant. This component bridges the gap between content consumption and interactive understanding by providing contextual AI assistance directly within any web application.
+
+# Core Features
+## Text Selection Capture
+- Captures user's text selections from anywhere on the webpage
+- Automatically extracts the selected text and its surrounding context
+- Preserves formatting and structure where relevant
+- Provides visual feedback when text is successfully captured
+
+## Contextual AI Chat Interface
+- Modern, intuitive chat UI that appears when text is selected
+- Sends selected text and document context to the chosen LLM API
+- Maintains conversation history and context within the session
+- Supports markdown rendering for rich responses
+- Allows users to ask follow-up questions about the selected content
+
+## Screen Capture & Image Support
+- Enables users to take screenshots directly from the interface
+- Supports uploading images from local storage
+- Provides image annotation capabilities (highlight, circle, arrow)
+- Includes OCR capabilities to extract text from images when needed
+
+## LLM API Flexibility
+- Supports multiple LLM providers (OpenAI, Anthropic, etc.)
+- Simple configuration for API credentials and preferences
+- Adjustable parameters (temperature, max tokens, etc.)
+- Fallback mechanisms if primary LLM service is unavailable
+
+## Modular Integration
+- Easily embeddable in any React application with minimal configuration
+- Customizable styling to match host application design system
+- Responsive design works across mobile and desktop views
+- Event-based architecture for clean integration with existing applications
+
+# User Experience
+## User Personas
+- Content Researchers: Need to quickly understand complex content on websites
+- Knowledge Workers: Want to extract insights from documents and web content
+- Students: Looking to get explanations or summaries of educational material
+- Developers: Integrating the component into their applications for end-users
+
+## Key User Flows
+1. Text Selection Flow:
+   - User selects text on the webpage
+   - A small popup appears near the selection
+   - User clicks the popup to open the chat interface
+   - The selected text is automatically provided as context
+
+2. Chat Interaction Flow:
+   - User asks question about the selected text
+   - AI responds with relevant information
+   - User can ask follow-up questions or select new text
+   - Conversation history is maintained throughout the session
+
+3. Image/Screenshot Flow:
+   - User clicks screenshot button in chat interface
+   - Selection tool appears to capture portion of screen
+   - Image is processed and attached to the conversation
+   - User can reference the image in questions
+
+## UI/UX Considerations
+- Minimalist design to avoid disrupting the host application
+- Collapsible interface that only appears when needed
+- Keyboard shortcuts for power users
+- Accessibility compliance (WCAG 2.1)
+- Dark/light mode support to match host application
+
+# Technical Architecture
+## System Components
+1. Selection Capture Module:
+   - Event listeners for text selection
+   - Context extraction algorithm
+   - DOM traversal utilities for enhanced context
+
+2. Chat Interface Component:
+   - React-based chat UI
+   - Message rendering system
+   - Input handling and submission logic
+
+3. Image Processing Module:
+   - Screenshot capture utility
+   - Image annotation tools
+   - OCR integration for text extraction
+
+4. LLM Provider Adapter:
+   - API client abstractions
+   - Provider-specific formatters
+   - Error handling and retry logic
+
+5. Core State Management:
+   - Conversation history store
+   - User preferences
+   - Application state
+
+## Data Models
+- Message: {id, content, role, timestamp, attachments}
+- Conversation: {id, messages[], context, metadata}
+- Selection: {text, sourceElement, contextBefore, contextAfter, url}
+- ImageAttachment: {id, src, type, annotations, extractedText}
+- LLMProvider: {id, name, apiKey, baseUrl, models[], defaultParams}
+
+## APIs and Integrations
+- LLM Provider APIs (OpenAI, Anthropic, etc.)
+- OCR Services for image text extraction
+- Host application event integration
+- Local storage for conversation persistence
+
+## Infrastructure Requirements
+- Client-side only implementation for core functionality
+- Optional server-side proxy for API key security
+- Content security policy considerations for host applications
+
+# Development Roadmap
+## MVP Requirements
+1. Basic Text Selection:
+   - Implement text selection capture
+   - Extract selected text and minimal context
+   - Create simple popup indication of selection
+
+2. Core Chat Interface:
+   - Develop minimalist chat UI
+   - Implement basic conversation functionality
+   - Connect to a single LLM provider (OpenAI)
+
+3. Initial React Component:
+   - Create primary React component structure
+   - Implement basic configuration options
+   - Develop simple integration example
+
+4. Documentation:
+   - Installation and setup guide
+   - Basic API documentation
+   - Simple examples
+
+## Phase 2 Enhancements
+1. Enhanced Context Extraction:
+   - Improve document context gathering
+   - Add heading/section detection
+   - Implement smarter context prioritization
+
+2. Image Capture:
+   - Add screenshot functionality
+   - Implement basic image upload
+   - Create image attachment rendering
+
+3. Multiple LLM Providers:
+   - Add support for Anthropic
+   - Create provider abstraction layer
+   - Implement provider configuration options
+
+4. UI/UX Improvements:
+   - Add animations and transitions
+   - Improve responsive behavior
+   - Implement keyboard shortcuts
+
+## Phase 3 Additions
+1. Advanced Image Features:
+   - Add annotation tools
+   - Implement OCR capabilities
+   - Add image analysis functions
+
+2. Enhanced Customization:
+   - Create theming system
+   - Add component extension points
+   - Implement CSS-in-JS for style isolation
+
+3. Performance Optimizations:
+   - Lazy loading of components
+   - Optimize rendering performance
+   - Reduce bundle size
+
+4. Enterprise Features:
+   - Add authentication integration
+   - Implement usage tracking
+   - Create team collaboration features
+
+# Logical Dependency Chain
+1. Foundation First:
+   - Selection capture mechanism
+   - Basic context extraction
+   - Minimal viable chat interface
+
+2. User Experience Focus:
+   - Improve chat UI/UX
+   - Enhance context quality
+   - Add basic image support
+
+3. Integration Capabilities:
+   - Develop robust React component API
+   - Create customization options
+   - Build demonstration applications
+
+4. Advanced Features:
+   - Multiple LLM providers
+   - Full image annotation support
+   - Enterprise integration options
+
+# Risks and Mitigations
+## Technical Challenges
+- Risk: Cross-browser text selection inconsistencies
+  Mitigation: Implement browser-specific adapters and thorough testing
+
+- Risk: LLM API changes or deprecations
+  Mitigation: Create abstraction layer for providers with versioned adapters
+
+- Risk: Performance impact on host applications
+  Mitigation: Lazy loading, efficient rendering, and throttled event handling
+
+## MVP Scope
+- Risk: Feature creep extending development timeline
+  Mitigation: Clear prioritization of features with strict MVP definition
+
+- Risk: Overengineering the initial solution
+  Mitigation: Focus on core functionality first, with clean extension points
+
+## Resource Constraints
+- Risk: Complex UI requirements requiring specialized skills
+  Mitigation: Leverage existing UI libraries where possible
+
+- Risk: LLM costs for development and testing
+  Mitigation: Use mocked responses for development, rate limiting for tests
+
+# Appendix
+## Similar Solutions Research
+- Existing solutions typically require back-end integration
+- Most current implementations are application-specific rather than modular
+- Few solutions combine text selection with image processing capabilities
+
+## Technical Specifications
+- React 18+ as primary framework
+- TypeScript for type safety and developer experience
+- CSS Modules or styled-components for styling
+- Jest and React Testing Library for testing
+- Rollup for package bundling 

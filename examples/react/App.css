@@ -1,0 +1,118 @@
+/* App.css */
+.app {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.controls button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.controls button:hover {
+  background-color: #357bd8;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.content-section {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.sample-content {
+  line-height: 1.6;
+}
+
+.code-block {
+  background-color: #f1f1f1;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.code-block pre {
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.chat-container {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.app-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.app-footer a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Lists in content */
+.sample-content ul {
+  padding-left: 20px;
+}
+
+.sample-content li {
+  margin-bottom: 8px;
+}
+
+/* Make all headings consistent */
+h1, h2, h3 {
+  color: #333;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 22px;
+  margin-top: 0;
+}
+
+h3 {
+  font-size: 18px;
+} 

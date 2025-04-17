@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelectChat Basic Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid #eaeaea;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      color: #2563eb;
+    }
+    main {
+      display: flex;
+      flex-grow: 1;
+    }
+    .content {
+      flex: 2;
+      padding: 20px;
+      max-width: 800px;
+    }
+    .chat-container {
+      flex: 0.3;
+      height: 800px;
+      width: 280px;
+      border: 1px solid #eaeaea;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    p {
+      margin-bottom: 1rem;
+    }
+    .api-key-input {
+      margin-bottom: 1rem;
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    pre {
+      background-color: #f5f7fa;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .api-key-prompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 80%;
+      z-index: 10;
+    }
+    .api-key-prompt p {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .api-key-prompt input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .api-key-prompt button {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SelectChat Basic Example</h1>
+  </header>
+  
+  <main>
+    <div class="content">
+      <h2>How to Use</h2>
+      <p>
+        This example demonstrates the basic usage of the SelectChat component. You can select text on this page and 
+        interact with the AI assistant in the chat panel.
+      </p>
+      
+      <h3>API Key</h3>
+      <p>
+        Enter your OpenAI API key to try the component:
+      </p>
+      <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your OpenAI API key here">
+      <button id="saveApiKey">Save API Key</button>
+      
+      <h3>Sample Text for Selection</h3>
+      <p>
+        The SelectChat component allows users to select text on a webpage and discuss it with an AI assistant. 
+        This makes it useful for research, learning, and content creation. When you select text, the AI will 
+        have access to the selection and can answer questions about it.
+      </p>
+      <p>
+        Try selecting this paragraph and asking a question about it in the chat panel. The AI will respond with
+        information related to your selection.
+      </p>
+      
+      <h3>Code Example</h3>
+      <pre><code>
+import { SelectChat } from 'llm-select-and-chat';
+import 'llm-select-and-chat/dist/style.css';
+
+// Basic initialization
+const container = document.querySelector('#chat-container');
+const selectChat = new SelectChat({
+  container,
+  apiKey: 'your-openai-api-key',
+  theme: 'system',
+  userPreferences: {
+    showTimestamps: true,
+    codeHighlighting: true
+  }
+});
+      </code></pre>
+    </div>
+    
+    <div id="chat-container" class="chat-container">
+      <!-- SelectChat will be initialized here -->
+    </div>
+  </main>
+  
+  <script src="../../dist/index.umd.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const chatContainer = document.getElementById('chat-container');
+      const apiKeyInput = document.getElementById('apiKeyInput');
+      const saveApiKeyButton = document.getElementById('saveApiKey');
+      
+      // Always initialize, even without an API key
+      initializeSelectChat();
+      
+      // Check for saved API key in localStorage
+      const savedApiKey = localStorage.getItem('selectchat_api_key');
+      if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+        // Update the existing instance with the API key
+        if (window.selectChatInstance) {
+          window.selectChatInstance.updateConfig({ apiKey: savedApiKey });
+        }
+      }
+      
+      // Save API key and update config
+      saveApiKeyButton.addEventListener('click', function() {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+          localStorage.setItem('selectchat_api_key', apiKey);
+          
+          // Update the existing instance with the API key
+          if (window.selectChatInstance) {
+            window.selectChatInstance.updateConfig({ apiKey: apiKey });
+            
+            // Remove the API key prompt if it exists
+            const prompt = document.querySelector('.api-key-prompt');
+            if (prompt) {
+              prompt.remove();
+            }
+          }
+        } else {
+          alert('Please enter a valid API key');
+        }
+      });
+      
+      function initializeSelectChat(apiKey = null) {
+        if (window.selectChatInstance) {
+          // Clean up previous instance if exists
+          window.selectChatInstance.destroy();
+          chatContainer.innerHTML = '';
+        }
+        
+        // Check if LLMSelectAndChat is properly loaded
+        if (!window.LLMSelectAndChat || !window.LLMSelectAndChat.initSelectChat) {
+          console.error('LLMSelectAndChat library not properly loaded. Check that the UMD build is accessible.');
+          return;
+        }
+        
+        // Initialize new instance
+        try {
+          window.selectChatInstance = window.LLMSelectAndChat.initSelectChat({
+            container: chatContainer,
+            apiKey: apiKey,
+            theme: 'system',
+            userPreferences: {
+              showTimestamps: true,
+              codeHighlighting: true
+            },
+            onSelectionCapture: (selection) => {
+              console.log('Text selected:', selection);
+            },
+            onConversationUpdate: (conversation) => {
+              console.log('Conversation updated:', conversation);
+            },
+            onError: (error) => {
+              console.error('SelectChat error:', error);
+            }
+          });
+          
+          // Add event listeners for monitoring
+          window.selectChatInstance.on('selection', (selection) => {
+            console.log('Selection event:', selection);
+          });
+          
+          window.selectChatInstance.on('message', (message) => {
+            console.log('Message sent:', message);
+          });
+          
+          window.selectChatInstance.on('response', (message) => {
+            console.log('Response received:', message);
+          });
+          
+          console.log('SelectChat initialized successfully');
+          
+          // If no API key is provided, show a prompt in the chat container
+          if (!apiKey) {
+            // Create API key prompt overlay
+            const apiKeyPrompt = document.createElement('div');
+            apiKeyPrompt.className = 'api-key-prompt';
+            
+            apiKeyPrompt.innerHTML = `
+              <p>Please enter your OpenAI API key to start chatting</p>
+              <input type="password" id="overlayApiKeyInput" placeholder="Enter your OpenAI API key">
+              <button id="overlayApiKeyButton">Start Chatting</button>
+            `;
+            
+            chatContainer.appendChild(apiKeyPrompt);
+            
+            // Set up the overlay button
+            const overlayInput = document.getElementById('overlayApiKeyInput');
+            const overlayButton = document.getElementById('overlayApiKeyButton');
+            
+            overlayButton.addEventListener('click', function() {
+              const key = overlayInput.value.trim();
+              if (key) {
+                // Update both the form input and the component
+                apiKeyInput.value = key;
+                localStorage.setItem('selectchat_api_key', key);
+                window.selectChatInstance.updateConfig({ apiKey: key });
+                apiKeyPrompt.remove();
+              } else {
+                alert('Please enter a valid API key');
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing SelectChat:', error);
+        }
+      }
+    });
+  </script>
+</body>
+</html> 
