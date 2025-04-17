@@ -2,6 +2,19 @@
 export { SelectChat } from './components/SelectChat';
 export { ChatInterface } from './components/ChatInterface';
 
+// Export theme utilities
+export { 
+  createTheme, 
+  lightTheme, 
+  darkTheme 
+} from './utils/theme';
+export type { ThemeProps, ThemeColors } from './utils/theme';
+
+// Re-export ThemeProvider from styled-components for convenience
+// This allows users to import it directly from our package
+import { ThemeProvider } from 'styled-components';
+export { ThemeProvider };
+
 // Export adapters
 export { OpenAIAdapter } from './components/LLMProviderAdapter';
 export type { LLMProviderAdapter } from './components/LLMProviderAdapter';
@@ -17,14 +30,6 @@ export type {
   UserPreferences,
   SelectChatProps
 } from './types';
-
-// Export theme utilities
-export { 
-  createTheme, 
-  lightTheme, 
-  darkTheme 
-} from './utils/theme';
-export type { ThemeProps, ThemeColors } from './utils/theme';
 
 // Export vanilla JS initializer
 export { initSelectChat } from './vanilla';

@@ -1,29 +1,27 @@
 # LLM Select and Chat
 
-A flexible and customizable React component for selecting text on a webpage and chatting with an LLM (Large Language Model) assistant about it.
+A flexible React component for text selection and AI chat integration. This package provides an easy way to integrate text selection and AI-powered chat capabilities into your application.
 
 ## Features
 
-- 🎨 Fully themeable and customizable chat interface
-- 🔍 Smart text selection capture
-- 🤖 Integrates with multiple LLM providers (OpenAI, Gemini)
-- 📱 Responsive design that works on desktop and mobile
-- 🌗 Light and dark mode support
-- 🔄 Real-time conversation updates
-- 🔒 Secure API key handling options
-- ⚛️ Built with React and TypeScript
+- 🔍 **Text Selection**: Select text anywhere on your page and discuss it with an AI assistant
+- 🖼️ **Image Support**: Paste images directly into the chat input
+- 🔄 **Multiple LLM Providers**: Support for OpenAI, Gemini, Claude, and custom providers
+- 🎨 **Theming**: Light/dark mode and customizable themes
+- 📱 **Responsive**: Works across desktop and mobile
+- 🧩 **Modular Design**: Use individual components or the full chat interface
 
 ## Installation
 
 ```bash
+# Install the package
 npm install llm-select-and-chat
-# or
-yarn add llm-select-and-chat
+
+# Install peer dependencies (if not already in your project)
+npm install react react-dom styled-components
 ```
 
 ## Quick Start
-
-### React Usage
 
 ```jsx
 import React from 'react';
@@ -31,123 +29,84 @@ import { SelectChat } from 'llm-select-and-chat';
 
 function App() {
   return (
-    <div style={{ width: '400px', height: '600px' }}>
-      <SelectChat
+    <div style={{ height: '600px', width: '400px' }}>
+      <SelectChat 
         apiKey="your-openai-api-key"
-        theme="system"
-        userPreferences={{
-          showTimestamps: true,
-          codeHighlighting: true
-        }}
-        onSelectionCapture={(selection) => console.log('Text selected:', selection)}
-        onConversationUpdate={(conversation) => console.log('Conversation updated:', conversation)}
-        onError={(error) => console.error('Error:', error)}
+        theme="light"
       />
     </div>
   );
 }
 ```
 
-### Vanilla JavaScript Usage
-
-```html
-<div id="chat-container" style="width: 400px; height: 600px;"></div>
-
-<script src="https://unpkg.com/llm-select-and-chat/dist/index.umd.js"></script>
-<script>
-  const container = document.getElementById('chat-container');
-  const chatInstance = LLMSelectAndChat.initSelectChat({
-    container: container,
-    apiKey: 'your-openai-api-key',
-    theme: 'system',
-    userPreferences: {
-      showTimestamps: true,
-      codeHighlighting: true
-    },
-    onSelectionCapture: (selection) => console.log('Text selected:', selection),
-    onError: (error) => console.error('Error:', error)
-  });
-</script>
-```
-
-## Props
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `apiKey` | `string` | `undefined` | API key for the LLM provider (OpenAI by default) |
-| `provider` | `LLMProvider` | OpenAI config | Configuration for the LLM provider |
-| `theme` | `'light' \| 'dark' \| 'system'` | `'system'` | UI theme |
-| `userPreferences` | `UserPreferences` | Default preferences | User-specific settings |
-| `onSelectionCapture` | `(selection: Selection) => void` | `undefined` | Callback when text is selected |
-| `onConversationUpdate` | `(conversation: Conversation) => void` | `undefined` | Callback when conversation changes |
-| `onError` | `(error: Error) => void` | `undefined` | Callback for error handling |
-
-## Customizing the LLM Provider
-
-You can use different LLM providers by configuring the `provider` prop:
+## With Custom Theme
 
 ```jsx
-<SelectChat
-  provider={{
-    type: 'openai', // or 'gemini', 'custom'
-    apiKey: 'your-api-key',
-    baseUrl: 'https://api.openai.com', // optional, use for proxies
-    defaultParams: {
-      model: 'gpt-4',
-      temperature: 0.7,
-      maxTokens: 1000
-    }
-  }}
-/>
-```
-
-## Theme Customization
-
-The component supports full theme customization:
-
-```jsx
-import { SelectChat, createTheme } from 'llm-select-and-chat';
-
-// Create a custom theme
-const customTheme = createTheme('light');
-customTheme.colors.primary = '#8A2BE2'; // blueviolet
-customTheme.colors.background = '#FAFAFA';
+import React from 'react';
+import { SelectChat, createTheme, ThemeProvider } from 'llm-select-and-chat';
 
 function App() {
+  const customTheme = createTheme('light');
+  customTheme.colors.primary = '#4a90e2';
+
   return (
-    <div style={{ width: '400px', height: '600px' }}>
-      <ThemeProvider theme={customTheme}>
-        <SelectChat apiKey="your-api-key" />
-      </ThemeProvider>
-    </div>
+    <ThemeProvider theme={customTheme}>
+      <SelectChat apiKey="your-api-key" />
+    </ThemeProvider>
   );
 }
 ```
 
-## Server-Side Proxy for API Key Security
+## Handling Images
 
-For production applications, it's recommended to use a server-side proxy to protect your API keys:
+The component supports pasting images directly from clipboard:
 
-1. Set up a proxy server that forwards requests to the LLM provider
-2. Configure the component to use your proxy:
+1. Copy an image to your clipboard (e.g., take a screenshot)
+2. Click on the chat input field
+3. Paste using Ctrl+V / Cmd+V
+4. Send with or without an accompanying text message
 
-```jsx
-<SelectChat
-  provider={{
-    type: 'openai',
-    apiKey: '', // No client-side API key needed
-    baseUrl: 'https://your-server.com/api/llm-proxy',
-    defaultParams: {
-      model: 'gpt-3.5-turbo'
-    }
-  }}
-/>
+## Selection Context
+
+When text is selected, the component captures context around the selection and makes it available to the AI assistant.
+
+## Documentation
+
+For complete documentation, including advanced usage and API reference, see [usage.md](./usage.md).
+
+## Examples
+
+The library comes with several examples to help you get started:
+
+### Running the Examples
+
+```bash
+# Clone the repository
+git clone https://github.com/username/llm-select-and-chat.git
+cd llm-select-and-chat
+
+# Install dependencies and build the library
+npm install
+npm run build
+
+# Install example dependencies
+cd examples
+npm install
+
+# Start the example server
+npm start
 ```
+
+Then open your browser to [http://localhost:3000/examples/](http://localhost:3000/examples/)
+
+### Available Examples
+
+1. **Basic Example**: Minimal implementation with default styling
+2. **Simple Integration**: Integration into an existing webpage
+3. **React Integration**: Usage within a React application
+
+Each example demonstrates different aspects of the library, including custom styling, provider selection, and image handling.
 
 ## License
 
-MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT © [Your Name]

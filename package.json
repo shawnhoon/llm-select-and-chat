@@ -8,8 +8,13 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs.md",
+    "usage.md"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "rollup -c",
     "test": "jest",
@@ -20,7 +25,12 @@
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "verify": "npm run build && npm pack && tar -xf *.tgz && node -e \"console.log(require('./package/dist/index.cjs.js'))\"",
+    "check-exports": "node ./scripts/check-exports.js",
+    "prepublishOnly": "npm run build && npm run test && npm run check-exports",
+    "preview": "vite preview",
+    "example": "node examples/serve.js"
   },
   "keywords": [
     "react",
@@ -31,7 +41,9 @@
     "assistant",
     "llm",
     "openai",
-    "gemini"
+    "gemini",
+    "claude",
+    "text-selection"
   ],
   "author": "",
   "license": "MIT",
@@ -39,6 +51,11 @@
     "react": "^17.0.0 || ^18.0.0",
     "react-dom": "^17.0.0 || ^18.0.0",
     "styled-components": "^5.0.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "styled-components": {
+      "optional": false
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
@@ -72,6 +89,7 @@
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "serve": "^14.2.0",
+    "serve-handler": "^6.1.5",
     "ts-jest": "^29.0.5",
     "typescript": "^4.9.5"
   },

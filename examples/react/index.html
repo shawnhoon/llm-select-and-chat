@@ -3,57 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SelectChat React Example</title>
+  <title>LLM Select and Chat - React Example</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="root"></div>
-  
-  <!-- Load React dependencies -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/styled-components/dist/styled-components.min.js"></script>
-  
-  <!-- Load the component from your build -->
-  <script src="/dist/select-chat.umd.js"></script>
-  
-  <!-- Load the example app -->
-  <script>
-    // Simple React renderer for the example
-    document.addEventListener('DOMContentLoaded', function() {
-      // Create a div to mount the React component
-      const mountPoint = document.getElementById('root');
+  <div id="root">
+    <div class="app-container">
+      <header>
+        <h1>LLM Select and Chat - React Example</h1>
+      </header>
       
-      // Display a message about the React example
-      mountPoint.innerHTML = `
-        <div style="max-width: 800px; margin: 40px auto; padding: 20px; font-family: system-ui, sans-serif;">
-          <h1>SelectChat React Example</h1>
-          <p>The React example requires a build step to compile TypeScript and JSX.</p>
-          <p>For a working example, see the <a href="/basic">Basic Example</a> which uses the pre-built UMD version.</p>
-          <p>To run the full React example:</p>
-          <ol>
-            <li>Clone the repository</li>
-            <li>Run <code>npm install</code></li>
-            <li>Run <code>npm start</code></li>
-          </ol>
-          <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
-            <h2>Component Preview</h2>
-            <div id="preview" style="min-height: 200px; margin-top: 20px;"></div>
+      <main>
+        <div class="content">
+          <h2>Configuration</h2>
+          
+          <div id="config-panel" class="config-panel">
+            <div class="form-group">
+              <label for="api-key">API Key:</label>
+              <input
+                type="text"
+                id="api-key"
+                placeholder="Enter your OpenAI API Key"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label>Theme:</label>
+              <div class="theme-buttons">
+                <button id="light-theme" class="active">Light</button>
+                <button id="dark-theme">Dark</button>
+              </div>
+            </div>
+            
+            <div class="form-group checkbox">
+              <input
+                type="checkbox"
+                id="show-timestamps"
+                checked
+              />
+              <label for="show-timestamps">Show Timestamps</label>
+            </div>
+            
+            <button id="init-button" class="init-button">
+              Initialize Chat Interface
+            </button>
+          </div>
+          
+          <div id="docs" class="docs" style="display: none;">
+            <h3>Usage Instructions</h3>
+            <ol>
+              <li>Select any text on this page</li>
+              <li>Use the chat interface to discuss the selected text</li>
+              <li>Try pasting an image from your clipboard (screenshot)</li>
+              <li>Open browser console to see events logged</li>
+            </ol>
+            
+            <h3>Sample Text (Select Me)</h3>
+            <p>
+              This is an example paragraph that you can select to test the selection 
+              functionality. Simply highlight any portion of this text, and it will 
+              be captured by the selection hook. The selection will include context 
+              before and after the selected text.
+            </p>
+            <p>
+              You can also select across multiple paragraphs to see how the component
+              handles larger selections. The context will be captured from both the 
+              beginning and end of your selection, giving the AI assistant more 
+              information to work with when responding to your queries.
+            </p>
           </div>
         </div>
-      `;
+        
+        <div id="chat-container" class="chat-container"></div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- Load the library -->
+  <script src="../../dist/index.umd.js"></script>
+  
+  <!-- Initialize the chat interface -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      let chatInstance = null;
       
-      // Initialize basic version
-      if (typeof SelectChat !== 'undefined' && SelectChat.init) {
-        SelectChat.init({
-          container: '#preview',
-          apiKey: 'YOUR_OPENAI_API_KEY', // Replace with your API key
-          theme: 'light',
-          userPreferences: {
-            showTimestamps: true,
-            position: 'float'
-          }
-        });
-      }
+      // Elements
+      const configPanel = document.getElementById('config-panel');
+      const docsSection = document.getElementById('docs');
+      const apiKeyInput = document.getElementById('api-key');
+      const showTimestampsCheckbox = document.getElementById('show-timestamps');
+      const lightThemeButton = document.getElementById('light-theme');
+      const darkThemeButton = document.getElementById('dark-theme');
+      const initButton = document.getElementById('init-button');
+      const chatContainer = document.getElementById('chat-container');
+      
+      // Theme selection
+      let currentTheme = 'light';
+      
+      lightThemeButton.addEventListener('click', function() {
+        lightThemeButton.classList.add('active');
+        darkThemeButton.classList.remove('active');
+        currentTheme = 'light';
+      });
+      
+      darkThemeButton.addEventListener('click', function() {
+        darkThemeButton.classList.add('active');
+        lightThemeButton.classList.remove('active');
+        currentTheme = 'dark';
+      });
+      
+      // Initialize chat
+      initButton.addEventListener('click', function() {
+        const apiKey = apiKeyInput.value.trim();
+        
+        if (!apiKey) {
+          alert('Please enter your API key');
+          return;
+        }
+        
+        // Hide config, show docs
+        configPanel.style.display = 'none';
+        docsSection.style.display = 'block';
+        
+        // Initialize chat interface
+        if (typeof LLMSelectAndChat === 'undefined' || !LLMSelectAndChat.initSelectChat) {
+          console.error('LLMSelectAndChat library not loaded properly');
+          alert('Error: LLM Select and Chat library not loaded properly');
+          return;
+        }
+        
+        try {
+          // Log available exports
+          console.log('Available exports:', LLMSelectAndChat);
+          
+          chatInstance = LLMSelectAndChat.initSelectChat({
+            container: chatContainer,
+            apiKey: apiKey,
+            theme: currentTheme,
+            userPreferences: {
+              showTimestamps: showTimestampsCheckbox.checked,
+              codeHighlighting: true,
+              fontSize: 'medium'
+            },
+            onSelectionCapture: function(selection) {
+              console.log('Selection captured:', selection);
+            },
+            onConversationUpdate: function(conversation) {
+              console.log('Conversation updated:', conversation);
+              
+              // Check for attachments in the last message
+              if (conversation.messages && conversation.messages.length > 0) {
+                const lastMessage = conversation.messages[conversation.messages.length - 1];
+                if (lastMessage && lastMessage.attachments && lastMessage.attachments.length > 0) {
+                  console.log('Image attachments:', lastMessage.attachments);
+                }
+              }
+            },
+            onError: function(error) {
+              console.error('Error occurred:', error);
+            }
+          });
+          
+          console.log('Chat interface initialized:', chatInstance);
+        } catch (error) {
+          console.error('Error initializing chat interface:', error);
+          alert('Error initializing chat interface: ' + error.message);
+        }
+      });
     });
   </script>
 </body>

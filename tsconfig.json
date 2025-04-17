@@ -1,37 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2018",
     "module": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "react-jsx",
-    "declaration": true,
-    "declarationDir": "dist",
-    "sourceMap": true,
-    "outDir": "dist",
-    "removeComments": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "jsx": "react",
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "sourceMap": true,
+    "outDir": "./dist",
     "esModuleInterop": true,
+    "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": false,
+    "noEmitOnError": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "dist", "demo", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 } 

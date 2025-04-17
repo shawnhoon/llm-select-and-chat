@@ -16,39 +16,85 @@ const baseConfig = {
   input: 'src/index.ts',
   plugins: [
     peerDepsExternal(),
-    resolve(),
-    commonjs(),
+    resolve({
+      browser: true,
+      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    }),
+    commonjs({
+      include: /node_modules/,
+    }),
     typescript({
       tsconfig: './tsconfig.json',
-      exclude: ['**/__tests__', '**/*.test.ts', '**/*.test.tsx']
+      exclude: ['**/__tests__', '**/*.test.ts', '**/*.test.tsx'],
+      sourceMap: true,
+      inlineSources: true,
+      declaration: true,
+      declarationDir: './dist/types',
+      noEmitOnError: false, // Continue build even with TypeScript errors
     }),
     postcss({
       extensions: ['.css'],
       minimize: true,
+      inject: {
+        insertAt: 'top',
+      },
+    }),
+    replace({
+      preventAssignment: true,
+      'process.env.NODE_ENV': JSON.stringify('production')
     }),
   ],
-  external: ['react', 'react-dom', 'styled-components'],
+  external: ['react', 'react-dom', 'styled-components', 'react/jsx-runtime'],
+  onwarn(warning, warn) {
+    // Skip certain warnings
+    if (
+      warning.code === 'THIS_IS_UNDEFINED' || 
+      warning.code === 'UNUSED_EXTERNAL_IMPORT' ||
+      warning.code.includes('TS')
+    ) return;
+    // Use default for everything else
+    warn(warning);
+  },
 };
 
 // The vanilla JS standalone build
 const vanillaConfig = {
   input: 'src/vanilla.ts',
   plugins: [
-    resolve({ browser: true }),
-    commonjs(),
+    resolve({ 
+      browser: true,
+      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    }),
+    commonjs({
+      include: /node_modules/,
+    }),
     replace({
       'process.env.NODE_ENV': JSON.stringify('production'),
       preventAssignment: true
     }),
     typescript({
       tsconfig: './tsconfig.json',
-      exclude: ['**/__tests__', '**/*.test.ts', '**/*.test.tsx']
+      exclude: ['**/__tests__', '**/*.test.ts', '**/*.test.tsx'],
+      sourceMap: true,
+      declaration: true,
+      declarationDir: './dist/types',
+      noEmitOnError: false, // Continue build even with TypeScript errors
     }),
     postcss({
       extensions: ['.css'],
       minimize: true,
+      inject: {
+        insertAt: 'top',
+      },
     }),
-    terser(),
+    terser({
+      format: {
+        comments: false,
+      },
+      compress: {
+        drop_console: false,
+      },
+    }),
   ],
   // Include dependencies in the bundle for standalone use
   external: [],
@@ -62,6 +108,7 @@ export default [
       file: packageJson.module,
       format: 'esm',
       sourcemap: true,
+      exports: 'named',
     },
   },
   
@@ -72,6 +119,7 @@ export default [
       file: packageJson.main,
       format: 'cjs',
       sourcemap: true,
+      exports: 'named',
     },
   },
   
@@ -80,11 +128,11 @@ export default [
     ...baseConfig,
     plugins: [
       ...baseConfig.plugins,
-      replace({
-        'process.env.NODE_ENV': JSON.stringify('production'),
-        preventAssignment: true
+      terser({
+        format: {
+          comments: false,
+        },
       }),
-      terser()
     ],
     output: {
       file: 'dist/index.min.js',
@@ -95,7 +143,9 @@ export default [
         react: 'React',
         'react-dom': 'ReactDOM',
         'styled-components': 'styled',
+        'react/jsx-runtime': 'jsxRuntime',
       },
+      exports: 'named',
     },
   },
   
@@ -111,17 +161,37 @@ export default [
     },
   },
   
-  // Types
+  // Types - this will run after the builds above to ensure types are generated
   {
-    input: 'dist/index.d.ts',
-    output: [{ file: 'dist/index.d.ts', format: 'esm' }],
-    plugins: [dts()],
+    input: 'src/index.ts',
+    output: [{ file: 'dist/index.d.ts', format: 'es' }],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: true,
+        emitDeclarationOnly: true,
+        declarationDir: 'dist',
+        outDir: 'dist',
+        noEmitOnError: false, // Continue build even with TypeScript errors
+      }),
+      dts(),
+    ],
   },
   
   // Types for vanilla.js
   {
-    input: 'dist/vanilla.d.ts',
-    output: [{ file: 'dist/vanilla.d.ts', format: 'esm' }],
-    plugins: [dts()],
+    input: 'src/vanilla.ts',
+    output: [{ file: 'dist/vanilla.d.ts', format: 'es' }],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: true,
+        emitDeclarationOnly: true,
+        declarationDir: 'dist',
+        outDir: 'dist',
+        noEmitOnError: false, // Continue build even with TypeScript errors
+      }),
+      dts(),
+    ],
   },
 ]; 

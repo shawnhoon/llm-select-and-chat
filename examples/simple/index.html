@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Select and Chat - Simple Example</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      flex-direction: column;
+    }
+    
+    header {
+      background-color: #f5f5f5;
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    
+    main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    
+    .chat-container {
+      width: 400px;
+      height: 100%;
+      border-left: 1px solid #ddd;
+    }
+    
+    pre {
+      background-color: #f7f7f7;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    
+    code {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    }
+    
+    .api-key-form {
+      margin-bottom: 1rem;
+    }
+    
+    .api-key-form input {
+      padding: 0.5rem;
+      width: 300px;
+      margin-right: 0.5rem;
+    }
+    
+    .api-key-form button {
+      padding: 0.5rem 1rem;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .api-key-form button:hover {
+      background-color: #3a80d2;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LLM Select and Chat Example</h1>
+  </header>
+  
+  <main>
+    <div class="content">
+      <h2>Getting Started with LLM Select and Chat</h2>
+      
+      <div class="api-key-form">
+        <input type="text" id="api-key" placeholder="Enter your OpenAI API key" />
+        <button onclick="initChat()">Initialize Chat</button>
+      </div>
+      
+      <p>
+        This is a simple example of using the <strong>LLM Select and Chat</strong> package. 
+        Select any text on this page and use the chat interface to discuss it with an AI assistant.
+      </p>
+      
+      <h3>Features:</h3>
+      <ul>
+        <li>Text selection and context extraction</li>
+        <li>Image paste support - try taking a screenshot and pasting it</li>
+        <li>Multiple LLM provider support</li>
+        <li>Theming and customization</li>
+      </ul>
+      
+      <h3>Example Code:</h3>
+      <pre><code>// React Component
+import { SelectChat } from 'llm-select-and-chat';
+
+function App() {
+  return (
+    &lt;div style={{ height: '600px', width: '400px' }}&gt;
+      &lt;SelectChat 
+        apiKey="your-openai-api-key"
+        theme="light"
+      /&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Vanilla JavaScript
+const chatInstance = LLMSelectAndChat.initSelectChat({
+  container: document.getElementById('chat-container'),
+  apiKey: 'your-openai-api-key',
+  theme: 'light'
+});</code></pre>
+      
+      <h3>Instructions:</h3>
+      <ol>
+        <li>Enter your OpenAI API key above</li>
+        <li>Click "Initialize Chat" to load the chat interface</li>
+        <li>Select text on this page</li>
+        <li>Discuss the selection with the AI assistant</li>
+        <li>Try pasting an image (screenshot) into the chat</li>
+      </ol>
+      
+      <h3>Lorem Ipsum (Text to Select)</h3>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor velit in nunc ultricies, 
+        et hendrerit ex tincidunt. Morbi fringilla magna at lorem commodo, id sagittis ligula posuere. 
+        Donec bibendum, nulla id gravida convallis, nisi velit sagittis nulla, id tincidunt lectus sem 
+        non lectus. Nullam eget ultrices felis.
+      </p>
+      <p>
+        Praesent eget lectus vel arcu feugiat eleifend. Sed vel congue nisl. Vivamus vehicula diam vel 
+        rutrum vehicula. Suspendisse potenti. Aenean commodo ipsum in lorem lacinia, ut auctor metus venenatis. 
+        Cras non ex nec massa sodales feugiat. Integer posuere, mi sit amet rhoncus venenatis, justo est cursus dui, 
+        id molestie justo magna in nunc.
+      </p>
+    </div>
+    
+    <div id="chat-container" class="chat-container"></div>
+  </main>
+  
+  <!-- Load the package -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/styled-components/dist/styled-components.min.js"></script>
+  <script src="../../dist/index.umd.js"></script>
+  
+  <script>
+    function initChat() {
+      const apiKey = document.getElementById('api-key').value.trim();
+      
+      if (!apiKey) {
+        alert('Please enter your OpenAI API key');
+        return;
+      }
+      
+      const container = document.getElementById('chat-container');
+      const chatInstance = LLMSelectAndChat.initSelectChat({
+        container: container,
+        apiKey: apiKey,
+        theme: 'light',
+        userPreferences: {
+          showTimestamps: true,
+          codeHighlighting: true
+        },
+        onSelectionCapture: (selection) => {
+          console.log('Selection captured:', selection);
+        },
+        onError: (error) => {
+          console.error('Chat error:', error);
+          alert('Error: ' + error.message);
+        }
+      });
+      
+      // Store the instance for potential reuse
+      window.chatInstance = chatInstance;
+    }
+  </script>
+</body>
+</html> 

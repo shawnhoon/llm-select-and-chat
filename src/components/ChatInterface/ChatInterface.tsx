@@ -402,6 +402,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Handle paste event for images
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
+    let hasHandledImage = false;
     
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -421,17 +422,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const newAttachment: Attachment = {
           id,
           type: 'image',
-          name: `Pasted Image ${new Date().toLocaleString()}`,
+          name: `Pasted Image ${new Date().toLocaleTimeString()}`,
           data: blob,
           url: imageUrl,
           mimeType: blob.type
         };
         
         setAttachments(prev => [...prev, newAttachment]);
-        
-        // Prevent the image from being pasted into the textarea
-        e.preventDefault();
-        return;
+        hasHandledImage = true;
+      }
+    }
+    
+    // Only prevent default if we handled an image
+    if (hasHandledImage) {
+      e.preventDefault();
+      
+      // Show a brief visual feedback that image was added
+      if (inputRef.current) {
+        const originalBorder = inputRef.current.style.border;
+        inputRef.current.style.border = '2px solid #4ade80'; // success color
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.style.border = originalBorder;
+          }
+        }, 500);
       }
     }
   };
