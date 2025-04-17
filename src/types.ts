@@ -17,6 +17,7 @@ export interface Conversation {
   messages: Message[];
   annotations?: Annotation[];
   attachments?: Attachment[];
+  context?: Selection;
   createdAt: number;
   updatedAt: number;
 }
@@ -49,8 +50,11 @@ export interface Annotation {
 
 export interface LLMProvider {
   type: 'openai' | 'gemini' | 'claude' | 'custom';
+  id?: string;
+  name?: string;
   apiKey: string;
   baseUrl?: string;
+  models?: Array<{ id: string; name: string; maxTokens: number }>;
   defaultParams: {
     model: string;
     temperature?: number;
@@ -69,6 +73,9 @@ export interface UserPreferences {
   codeHighlighting?: boolean;
   maxContextLength?: number;
   historyLength?: number;
+  theme?: 'light' | 'dark' | 'system';
+  selectedProvider?: string;
+  position?: string;
 }
 
 export interface SelectChatProps {

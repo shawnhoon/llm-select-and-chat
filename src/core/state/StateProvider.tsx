@@ -70,6 +70,7 @@ export const StateProvider: React.FC<StateProviderProps> = ({
     {
       id: 'openai',
       name: 'OpenAI',
+      type: 'openai',
       apiKey: apiKey || '',
       models: [
         { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', maxTokens: 4096 },

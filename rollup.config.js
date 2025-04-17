@@ -142,6 +142,7 @@ export default [
       globals: {
         react: 'React',
         'react-dom': 'ReactDOM',
+        'react-dom/client': 'ReactDOM',
         'styled-components': 'styled',
         'react/jsx-runtime': 'jsxRuntime',
       },
@@ -158,6 +159,13 @@ export default [
       name: 'LLMSelectAndChat',
       sourcemap: true,
       exports: 'named',
+      globals: {
+        react: 'React',
+        'react-dom': 'ReactDOM',
+        'react-dom/client': 'ReactDOM',
+        'styled-components': 'styled',
+        'react/jsx-runtime': 'jsxRuntime',
+      },
     },
   },
   

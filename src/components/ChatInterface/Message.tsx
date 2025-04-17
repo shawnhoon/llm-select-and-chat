@@ -10,6 +10,7 @@ interface ExtendedMessageType extends MessageType {
 interface MessageProps {
   message: ExtendedMessageType;
   showTimestamp?: boolean;
+  isUser?: boolean;
 }
 
 const MessageContainer = styled.div<{ isUser: boolean }>`
