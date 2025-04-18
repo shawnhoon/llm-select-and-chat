@@ -18,7 +18,7 @@ const MessageContainer = styled.div<{ isUser: boolean }>`
   flex-direction: column;
   max-width: 85%;
   align-self: ${props => props.isUser ? 'flex-end' : 'flex-start'};
-  background-color: ${props => props.isUser ? props.theme.colors.primary + '5' : props.theme.colors.backgroundLight};
+  background-color: ${props => props.isUser ? props.theme.colors.primary + '20' : props.theme.colors.backgroundLight};
   border-radius: ${props => props.theme.borderRadius.medium};
   padding: ${props => props.theme.spacing.md};
   border: 1px solid ${props => props.isUser ? props.theme.colors.primary + '30' : props.theme.colors.border};
@@ -77,7 +77,7 @@ const AttachmentImage = styled.img`
 
 const MessageBubble = styled.div<{ isUser: boolean }>`
   background-color: ${props => props.isUser 
-    ? props.theme.colors.primary
+    ? props.theme.colors.primary + '40'
     : props.theme.colors.surface};
   color: ${props => props.isUser 
     ? props.theme.colors.textOnPrimary
