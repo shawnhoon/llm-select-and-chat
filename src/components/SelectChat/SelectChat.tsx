@@ -7,6 +7,7 @@ import { ChatInterface } from '../ChatInterface';
 import { LLMAdapterFactory } from '../LLMProviderAdapter';
 import { SelectionCaptureProvider } from '../SelectionCapture';
 import { uuid } from '../../utils/uuid';
+import { enhanceProviderWithSystemPrompt } from '../../utils/configLoader';
 
 const SelectChatContainer = styled.div`
   display: flex;
@@ -109,6 +110,7 @@ const isObject = (item: any): boolean => {
  * @param theme - Optional theme mode: 'light', 'dark', or 'system' (default)
  * @param customTheme - Optional custom theme properties that override the default theme
  * @param userPreferences - Optional user preferences for UI customization
+ * @param systemPromptConfig - Optional custom system prompt configuration
  * @param onSelectionCapture - Optional callback when text is selected
  * @param onConversationUpdate - Optional callback when conversation is updated
  * @param onError - Optional callback when an error occurs
@@ -119,6 +121,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   theme = 'system',
   customTheme,
   userPreferences: initialPreferences,
+  systemPromptConfig,
   onSelectionCapture,
   onConversationUpdate,
   onError
@@ -130,8 +133,13 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       : (theme as 'light' | 'dark')
   );
   
+  // Enhance the provider with system prompt configuration if provided
+  const enhancedInitialProvider = systemPromptConfig && initialProvider 
+    ? enhanceProviderWithSystemPrompt(initialProvider, systemPromptConfig)
+    : initialProvider;
+  
   // Add state for current provider
-  const [currentProvider, setCurrentProvider] = useState<LLMProvider | undefined>(initialProvider);
+  const [currentProvider, setCurrentProvider] = useState<LLMProvider | undefined>(enhancedInitialProvider);
   
   const [conversation, setConversation] = useState<Conversation>({
     id: uuid(),
@@ -247,13 +255,18 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     // Log provider change with better formatting
     console.log('%c🔄 CHANGING LLM PROVIDER', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 14px;');
     
+    // Apply system prompt config to the new provider if available
+    const enhancedProvider = systemPromptConfig
+      ? enhanceProviderWithSystemPrompt(newProvider, systemPromptConfig)
+      : newProvider;
+    
     if (apiKey && !currentProvider) {
       console.log('%cSwitching from default OpenAI to custom provider', 'font-weight: bold;');
     } else if (currentProvider) {
       console.log('%cFrom:', 'font-weight: bold;', `${currentProvider.type} / ${currentProvider.defaultParams.model} (temp: ${currentProvider.defaultParams.temperature || 'default'})`);
     }
     
-    console.log('%cTo:', 'font-weight: bold;', `${newProvider.type} / ${newProvider.defaultParams.model} (temp: ${newProvider.defaultParams.temperature || 'default'})`);
+    console.log('%cTo:', 'font-weight: bold;', `${enhancedProvider.type} / ${enhancedProvider.defaultParams.model} (temp: ${enhancedProvider.defaultParams.temperature || 'default'})`);
     
     // Save API key to localStorage
     try {
@@ -262,11 +275,11 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       const allKeys = savedKeys ? JSON.parse(savedKeys) : {};
       
       // Update with new key
-      allKeys[newProvider.type] = newProvider.apiKey;
+      allKeys[enhancedProvider.type] = enhancedProvider.apiKey;
       
       // Save back to localStorage
       localStorage.setItem('llm-select-chat-api-keys', JSON.stringify(allKeys));
-      console.log('Saved API key for', newProvider.type, 'to localStorage');
+      console.log('Saved API key for', enhancedProvider.type, 'to localStorage');
     } catch (error) {
       console.error('Error saving API key to localStorage:', error);
     }
@@ -281,8 +294,8 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       onConversationUpdate(updatedConversation);
     }
     
-    // Update current provider
-    setCurrentProvider(newProvider);
+    // Update current provider with the enhanced provider
+    setCurrentProvider(enhancedProvider);
   };
   
   // Handle sending a new message

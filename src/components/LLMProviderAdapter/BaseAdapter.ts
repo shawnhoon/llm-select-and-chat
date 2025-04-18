@@ -40,6 +40,12 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
    * Generate system message based on the selection and context
    */
   protected generateSystemMessage(selection: Selection | null): string {
+    // Check if a custom system prompt template is provided
+    if (this.provider.systemPrompt?.template) {
+      return this.formatCustomSystemPrompt(selection);
+    }
+    
+    // Default system prompt logic
     if (!selection) {
       return 'You are a helpful AI assistant.';
     }
@@ -58,6 +64,34 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     systemMessage += 'Please answer questions about this content in a helpful, accurate, and concise manner.';
     
     return systemMessage;
+  }
+  
+  /**
+   * Format custom system prompt using the provided template
+   */
+  protected formatCustomSystemPrompt(selection: Selection | null): string {
+    // Get the template and configuration
+    const { template } = this.provider.systemPrompt!;
+    const useSearch = this.provider.systemPrompt?.useSearch || false;
+    const contextLevels = this.provider.systemPrompt?.contextLevels || {};
+    
+    // Replace template variables
+    let formattedPrompt = template;
+    
+    // Replace useSearch variable
+    formattedPrompt = formattedPrompt.replace(/\${useSearch\s?\?\s?`([^`]*)`\s?:\s?'([^']*)'}/g, (_, ifTrue, ifFalse) => {
+      return useSearch ? ifTrue : ifFalse;
+    });
+    
+    // Handle simple conditional sections with variables
+    for (const [level, enabled] of Object.entries(contextLevels)) {
+      const regex = new RegExp(`\\$\\{${level}\\s?\\?\\s?\`([^\`]*)\`\\s?:\\s?'([^']*)'\\}`, 'g');
+      formattedPrompt = formattedPrompt.replace(regex, (_, ifTrue, ifFalse) => {
+        return enabled ? ifTrue : ifFalse;
+      });
+    }
+    
+    return formattedPrompt;
   }
   
   /**

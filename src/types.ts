@@ -65,6 +65,18 @@ export interface LLMProvider {
     frequencyPenalty?: number;
     presencePenalty?: number;
   };
+  systemPrompt?: {
+    template: string;
+    useSearch?: boolean;
+    contextLevels?: {
+      primary?: boolean;
+      immediate?: boolean;
+      local?: boolean;
+      broader?: boolean;
+      conversational?: boolean;
+      external?: boolean;
+    };
+  };
 }
 
 export interface UserPreferences {
@@ -86,6 +98,18 @@ export interface SelectChatProps {
   theme?: 'light' | 'dark' | 'system';
   customTheme?: ThemeProps | Partial<ThemeProps>;
   userPreferences?: UserPreferences;
+  systemPromptConfig?: string | {
+    template: string;
+    useSearch?: boolean;
+    contextLevels?: {
+      primary?: boolean;
+      immediate?: boolean;
+      local?: boolean;
+      broader?: boolean;
+      conversational?: boolean;
+      external?: boolean;
+    };
+  };
   onSelectionCapture?: (selection: Selection) => void;
   onConversationUpdate?: (conversation: Conversation) => void;
   onError?: (error: Error) => void;
