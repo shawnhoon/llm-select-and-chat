@@ -298,9 +298,68 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     setCurrentProvider(enhancedProvider);
   };
   
+  // Handle selection capture from the SelectionCaptureProvider
+  const handleSelectionCapture = (newSelection: Selection) => {
+    console.log('%c📌 SELECTION CAPTURED', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('Selection text:', newSelection.text?.substring(0, 100) + (newSelection.text?.length > 100 ? '...' : ''));
+    console.log('Context before:', newSelection.contextBefore?.substring(0, 50) + (newSelection.contextBefore?.length ?? 0 > 50 ? '...' : ''));
+    console.log('Context after:', newSelection.contextAfter?.substring(0, 50) + (newSelection.contextAfter?.length ?? 0 > 50 ? '...' : ''));
+    console.log('URL:', newSelection.url);
+    console.log('Location:', newSelection.location);
+    
+    // Add logging for full document context
+    console.log('%c📄 DOCUMENT CONTEXT', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('Has full document:', !!newSelection.fullDocument);
+    if (newSelection.fullDocument) {
+      console.log('Full document length:', newSelection.fullDocument.length);
+      console.log('Full document preview:', newSelection.fullDocument.substring(0, 150) + '...');
+    }
+    
+    console.log('Full selection object:', newSelection);
+    
+    setSelection(newSelection);
+    
+    // Notify parent component if callback is provided
+    if (onSelectionCapture) {
+      onSelectionCapture(newSelection);
+    }
+    
+    // Only update the conversation's updatedAt timestamp
+    const updatedConversation = {
+      ...conversation,
+      updatedAt: Date.now()
+    };
+    
+    if (onConversationUpdate) {
+      onConversationUpdate(updatedConversation);
+    }
+  };
+  
   // Handle sending a new message
   const handleSendMessage = async (content: string, attachments?: Attachment[]) => {
     try {
+      // Add detailed logging for the selection object before sending to LLM
+      if (selection) {
+        console.log('%c🔍 SELECTION BEING SENT TO LLM', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+        console.log('Selection text:', selection.text?.substring(0, 100) + (selection.text?.length > 100 ? '...' : ''));
+        console.log('Context before:', selection.contextBefore?.substring(0, 50) + (selection.contextBefore?.length ?? 0 > 50 ? '...' : ''));
+        console.log('Context after:', selection.contextAfter?.substring(0, 50) + (selection.contextAfter?.length ?? 0 > 50 ? '...' : ''));
+        console.log('URL:', selection.url);
+        console.log('Location:', selection.location);
+        
+        // Add logging for full document context
+        console.log('%c📄 DOCUMENT CONTEXT BEING SENT TO LLM', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+        console.log('Has full document:', !!selection.fullDocument);
+        if (selection.fullDocument) {
+          console.log('Full document length:', selection.fullDocument.length);
+          console.log('Full document preview:', selection.fullDocument.substring(0, 150) + '...');
+        }
+        
+        console.log('Full selection object being sent to LLM:', selection);
+      } else {
+        console.log('%c🔍 NO SELECTION AVAILABLE', 'background: #607D8B; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+      }
+
       // Create user message with selection and attachments
       const userMessage: Message = {
         id: uuid(),
@@ -310,6 +369,12 @@ export const SelectChat: React.FC<SelectChatProps> = ({
         ...(selection && { selection }), // Include selection with user message
         ...(attachments && attachments.length > 0 && { attachments }) // Include attachments if present
       };
+      
+      console.log('%c📝 USER MESSAGE CREATED', 'background: #00BCD4; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+      console.log('Message content:', content.substring(0, 100) + (content.length > 100 ? '...' : ''));
+      console.log('Has selection:', !!userMessage.selection);
+      console.log('Has attachments:', !!userMessage.attachments);
+      console.log('Full message object:', userMessage);
       
       // Update conversation with user message
       const updatedConversation = {
@@ -402,27 +467,6 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     
     if (onConversationUpdate) {
       onConversationUpdate(newConversation);
-    }
-  };
-  
-  // Handle selection capture from the SelectionCaptureProvider
-  const handleSelectionCapture = (newSelection: Selection) => {
-    console.log('Selection captured:', newSelection);
-    setSelection(newSelection);
-    
-    // Notify parent component if callback is provided
-    if (onSelectionCapture) {
-      onSelectionCapture(newSelection);
-    }
-    
-    // Only update the conversation's updatedAt timestamp
-    const updatedConversation = {
-      ...conversation,
-      updatedAt: Date.now()
-    };
-    
-    if (onConversationUpdate) {
-      onConversationUpdate(updatedConversation);
     }
   };
 

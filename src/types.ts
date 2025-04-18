@@ -30,6 +30,7 @@ export interface Selection {
   contextAfter?: string;
   url?: string;
   location?: string;
+  fullDocument?: string;
 }
 
 export interface Attachment {

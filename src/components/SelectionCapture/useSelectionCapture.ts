@@ -168,7 +168,8 @@ export const useSelectionCapture = ({
       text: selectedText,
       contextBefore,
       contextAfter,
-      url: window.location.href
+      url: window.location.href,
+      fullDocument: getDocumentText()
     };
 
     // Set the selection and call the callback if provided
@@ -181,7 +182,7 @@ export const useSelectionCapture = ({
       console.log('Calling onTextSelected callback');
       onTextSelected(newSelection);
     }
-  }, [onTextSelected, shortcutTriggered, getDocumentContext]);
+  }, [onTextSelected, shortcutTriggered, getDocumentContext, getDocumentText]);
 
   // Set up event listeners
   useEffect(() => {
