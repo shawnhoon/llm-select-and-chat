@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import styled, { ThemeProvider } from 'styled-components';
+import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { SelectChatProps, Conversation, Selection, UserPreferences, Message, LLMProvider, Attachment } from '../../types';
-import { createTheme } from '../../utils/theme';
+import { createTheme, ThemeProps } from '../../utils/theme';
 import { GlobalStyle } from '../../utils/theme';
 import { ChatInterface } from '../ChatInterface';
 import { LLMAdapterFactory } from '../LLMProviderAdapter';
@@ -14,18 +14,110 @@ const SelectChatContainer = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
+  color: ${props => props.theme.colors.text}; /* Explicit text color */
 `;
+
+// Additional global styles to enforce theme colors more strongly
+const EnhancedGlobalStyle = createGlobalStyle<{ theme: ThemeProps }>`
+  .select-chat-container *,
+  .select-chat-container *::before,
+  .select-chat-container *::after {
+    color: ${({ theme }) => theme.colors.text};
+  }
+  
+  /* Higher specificity for text elements */
+  .select-chat-container p,
+  .select-chat-container h1,
+  .select-chat-container h2,
+  .select-chat-container h3,
+  .select-chat-container h4,
+  .select-chat-container h5,
+  .select-chat-container h6,
+  .select-chat-container span,
+  .select-chat-container div,
+  .select-chat-container label {
+    color: ${({ theme }) => theme.colors.text};
+  }
+  
+  /* Input field text colors */
+  .select-chat-container input,
+  .select-chat-container textarea,
+  .select-chat-container select {
+    color: ${({ theme }) => theme.colors.text};
+  }
+  
+  /* Button text colors */
+  .select-chat-container button:not([class*="primary"]) {
+    color: ${({ theme }) => theme.colors.text};
+  }
+  
+  /* Primary buttons get the on-primary text color */
+  .select-chat-container button[class*="primary"] {
+    color: ${({ theme }) => theme.colors.textOnPrimary};
+  }
+  
+  /* Message bubbles enforce their colors more strongly */
+  .select-chat-container [class*="message-bubble"] {
+    color: ${({ theme }) => theme.colors.text} !important;
+  }
+  
+  /* Primary elements */
+  .select-chat-container [class*="primary"] {
+    background-color: ${({ theme }) => theme.colors.primary};
+    color: ${({ theme }) => theme.colors.textOnPrimary};
+  }
+`;
+
+/**
+ * Helper function to perform a deep merge of objects
+ */
+const deepMerge = (target: any, source: any): any => {
+  const output = {...target};
+  
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] });
+        } else {
+          output[key] = deepMerge(target[key], source[key]);
+        }
+      } else {
+        Object.assign(output, { [key]: source[key] });
+      }
+    });
+  }
+  
+  return output;
+};
+
+/**
+ * Helper function to check if a value is an object
+ */
+const isObject = (item: any): boolean => {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+};
 
 /**
  * SelectChat Component
  * 
  * A modular chat component that can be integrated into any web application.
  * It allows users to select text on a webpage and chat about it with an AI assistant.
+ * 
+ * @param apiKey - Optional API key for the LLM provider
+ * @param provider - Optional LLM provider configuration
+ * @param theme - Optional theme mode: 'light', 'dark', or 'system' (default)
+ * @param customTheme - Optional custom theme properties that override the default theme
+ * @param userPreferences - Optional user preferences for UI customization
+ * @param onSelectionCapture - Optional callback when text is selected
+ * @param onConversationUpdate - Optional callback when conversation is updated
+ * @param onError - Optional callback when an error occurs
  */
 export const SelectChat: React.FC<SelectChatProps> = ({
   apiKey,
   provider: initialProvider,
   theme = 'system',
+  customTheme,
   userPreferences: initialPreferences,
   onSelectionCapture,
   onConversationUpdate,
@@ -126,8 +218,29 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     }
   }, [currentProvider]);
   
+  // Update theme mode when theme prop changes
+  useEffect(() => {
+    if (theme !== 'system') {
+      setThemeMode(theme as 'light' | 'dark');
+      console.log('Theme mode updated from props:', theme);
+    }
+  }, [theme]);
+  
   // Create theme object
-  const themeObject = createTheme(themeMode);
+  const baseThemeObject = createTheme(themeMode);
+  
+  // Merge with custom theme if provided using proper deep merge
+  const themeObject = customTheme 
+    ? deepMerge(baseThemeObject, customTheme)
+    : baseThemeObject;
+    
+  // Log theme changes for debugging
+  useEffect(() => {
+    console.log('SelectChat component theme updated:');
+    console.log('Theme mode:', themeMode);
+    console.log('Using custom theme:', !!customTheme);
+    console.log('Theme colors:', themeObject.colors);
+  }, [themeMode, customTheme]);
   
   // Handle changing the LLM provider
   const handleProviderChange = (newProvider: LLMProvider) => {
@@ -302,8 +415,10 @@ export const SelectChat: React.FC<SelectChatProps> = ({
 
   return (
     <ThemeProvider theme={themeObject}>
+      {/* Apply both global styles */}
       <GlobalStyle theme={themeObject} />
-      <SelectChatContainer>
+      <EnhancedGlobalStyle theme={themeObject} />
+      <SelectChatContainer className="select-chat-container">
         <SelectionCaptureProvider onTextSelected={handleSelectionCapture}>
           <ChatInterface
             conversation={conversation}

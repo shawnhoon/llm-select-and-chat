@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelectChat Theme Demo</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <style>
+    :root {
+      --primary-color: #1a73e8;
+      --text-color: #202124;
+      --background-color: #f8f9fa;
+      --border-color: #dadce0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: var(--text-color);
+      background-color: white;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .theme-demo {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .theme-demo {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .theme-controls {
+      background-color: var(--background-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .control-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .control-group h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: inherit;
+      margin-bottom: 1rem;
+    }
+
+    .chat-container {
+      height: 500px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .code-display {
+      margin-top: 1.5rem;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow: auto;
+    }
+
+    .code-display pre {
+      margin: 0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+      font-size: 0.875rem;
+    }
+
+    .button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .button:hover {
+      background-color: #1967d2;
+    }
+
+    .theme-preview {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .theme-preview-heading {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      color: #5f6368;
+    }
+
+    .color-sample {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: middle;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>SelectChat Theme Demo</h1>
+      <p>Customize the appearance of the SelectChat component by adjusting theme settings below.</p>
+    </header>
+
+    <div class="theme-demo">
+      <div class="theme-controls">
+        <div class="control-group">
+          <h3>Base Theme</h3>
+          <label class="label" for="baseTheme">Theme Preset</label>
+          <select id="baseTheme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="blue">Blue</option>
+            <option value="green">Green</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <h3>Typography</h3>
+          <label class="label" for="fontSize">Font Size</label>
+          <select id="fontSize">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <h3>Spacing</h3>
+          <label class="label" for="spacing">Component Spacing</label>
+          <select id="spacing">
+            <option value="small">Compact</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Spacious</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <h3>Borders</h3>
+          <label class="label" for="borderRadius">Border Radius</label>
+          <select id="borderRadius">
+            <option value="none">None</option>
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <h3>Colors</h3>
+          <label class="label" for="primaryColor">Primary Color</label>
+          <input type="color" id="primaryColor" value="#1a73e8">
+        </div>
+
+        <div class="control-group">
+          <button id="applyTheme" class="button">Apply Theme</button>
+        </div>
+
+        <div class="theme-preview">
+          <div class="theme-preview-heading">Theme Preview</div>
+          <div id="themePreview"></div>
+        </div>
+      </div>
+
+      <div>
+        <div id="chat-container" class="chat-container"></div>
+        <div class="code-display">
+          <pre id="themeCode"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load SelectChat library -->
+  <script src="../../dist/select-chat.umd.js"></script>
+  
+  <!-- Load theme utilities -->
+  <script src="../react/chatThemer.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // DOM elements
+      const baseThemeSelect = document.getElementById('baseTheme');
+      const fontSizeSelect = document.getElementById('fontSize');
+      const spacingSelect = document.getElementById('spacing');
+      const borderRadiusSelect = document.getElementById('borderRadius');
+      const primaryColorInput = document.getElementById('primaryColor');
+      const applyThemeButton = document.getElementById('applyTheme');
+      const themePreviewElement = document.getElementById('themePreview');
+      const themeCodeElement = document.getElementById('themeCode');
+      
+      // Chat instance
+      let chatInstance = null;
+      
+      // Function to generate and apply theme
+      function applyTheme() {
+        const baseTheme = baseThemeSelect.value;
+        const fontSize = fontSizeSelect.value;
+        const spacing = spacingSelect.value;
+        const borderRadius = borderRadiusSelect.value;
+        const primaryColor = primaryColorInput.value;
+        
+        // Create custom theme
+        const customTheme = createCustomTheme(baseTheme, {
+          fontSizes: fontSize,
+          spacing: spacing,
+          borderRadius: borderRadius,
+          colors: {
+            primary: primaryColor,
+            accent: primaryColor
+          }
+        });
+        
+        // Update theme preview
+        updateThemePreview(customTheme);
+        
+        // Display theme code
+        themeCodeElement.textContent = 
+          `const customTheme = createCustomTheme('${baseTheme}', {\n` +
+          `  fontSizes: '${fontSize}',\n` +
+          `  spacing: '${spacing}',\n` +
+          `  borderRadius: '${borderRadius}',\n` +
+          `  colors: {\n` +
+          `    primary: '${primaryColor}',\n` +
+          `    accent: '${primaryColor}'\n` +
+          `  }\n` +
+          `});\n\n` +
+          `// Theme object:\n` +
+          JSON.stringify(customTheme, null, 2);
+        
+        // Initialize or update SelectChat
+        initializeChat(customTheme);
+      }
+      
+      // Function to update theme preview
+      function updateThemePreview(theme) {
+        const colors = theme.colors;
+        const previewHtml = `
+          <div style="margin-bottom: 8px;">
+            <span class="color-sample" style="background-color: ${colors.primary}"></span>
+            <span>Primary: ${colors.primary}</span>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span class="color-sample" style="background-color: ${colors.background}"></span>
+            <span>Background: ${colors.background}</span>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span class="color-sample" style="background-color: ${colors.surface}"></span>
+            <span>Surface: ${colors.surface}</span>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span class="color-sample" style="background-color: ${colors.text}; border: 1px solid #ccc;"></span>
+            <span>Text: ${colors.text}</span>
+          </div>
+          <div>
+            <span>Font Size: ${theme.typography.fontSizes.base}</span><br>
+            <span>Border Radius: ${theme.borderRadius.md}</span>
+          </div>
+        `;
+        
+        themePreviewElement.innerHTML = previewHtml;
+        
+        // Update CSS variables for the page
+        document.documentElement.style.setProperty('--primary-color', colors.primary);
+        document.documentElement.style.setProperty('--text-color', colors.text);
+        document.documentElement.style.setProperty('--background-color', colors.surface);
+        document.documentElement.style.setProperty('--border-color', colors.border);
+      }
+      
+      // Function to initialize or update the chat
+      function initializeChat(theme) {
+        // Clean up previous instance if exists
+        if (chatInstance) {
+          chatInstance.unmount();
+        }
+        
+        // Create a new SelectChat instance
+        chatInstance = SelectChat.init({
+          container: '#chat-container',
+          theme: theme,
+          provider: 'openai',
+          apiKey: 'sk-your-api-key',
+          userPreferences: {
+            defaultProvider: 'openai',
+            darkMode: theme.colors.background === '#202124'
+          }
+        });
+      }
+      
+      // Event listeners
+      applyThemeButton.addEventListener('click', applyTheme);
+      
+      // Apply initial theme
+      applyTheme();
+    });
+  </script>
+</body>
+</html> 

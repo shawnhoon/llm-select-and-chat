@@ -1,3 +1,5 @@
+import { ThemeProps } from './utils/theme';
+
 // Check if the file exists first and create it if it doesn't
 /**
  * Message represents a single message in a conversation
@@ -82,6 +84,7 @@ export interface SelectChatProps {
   apiKey?: string;
   provider?: LLMProvider;
   theme?: 'light' | 'dark' | 'system';
+  customTheme?: ThemeProps | Partial<ThemeProps>;
   userPreferences?: UserPreferences;
   onSelectionCapture?: (selection: Selection) => void;
   onConversationUpdate?: (conversation: Conversation) => void;

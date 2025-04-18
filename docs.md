@@ -184,6 +184,7 @@ import { MessageComponent } from 'llm-select-and-chat';
 | `apiKey` | `string` | `undefined` | API key for the LLM provider (OpenAI by default) |
 | `provider` | `LLMProvider` | OpenAI config | Configuration for the LLM provider |
 | `theme` | `'light' \| 'dark' \| 'system'` | `'system'` | UI theme |
+| `customTheme` | `ThemeProps \| Partial<ThemeProps>` | `undefined` | Custom theme properties that override the default theme |
 | `userPreferences` | `UserPreferences` | Default preferences | User-specific settings |
 | `onSelectionCapture` | `(selection: Selection) => void` | `undefined` | Callback when text is selected |
 | `onConversationUpdate` | `(conversation: Conversation) => void` | `undefined` | Callback when conversation changes |
@@ -240,7 +241,56 @@ Configure user-specific settings:
 
 ## Theme Customization
 
-The component supports full theme customization using the ThemeProvider from styled-components:
+The component supports multiple ways to customize the theme:
+
+### 1. Basic Theme Mode Selection
+
+```jsx
+<SelectChat 
+  apiKey="your-api-key"
+  theme="dark" // 'light', 'dark', or 'system'
+/>
+```
+
+### 2. Full Theme Customization via Props
+
+The `customTheme` prop allows you to directly customize all theme properties without using ThemeProvider:
+
+```jsx
+import { SelectChat } from 'llm-select-and-chat';
+
+function App() {
+  return (
+    <div style={{ width: '400px', height: '600px' }}>
+      <SelectChat
+        apiKey="your-openai-api-key"
+        theme="light" // Base theme to start with
+        customTheme={{
+          colors: {
+            primary: '#8A2BE2', // Change primary color to blueviolet
+            background: '#FAFAFA',
+            text: '#333333',
+            userMessage: '#E7F5FF', // Custom user message bubble color
+            assistantMessage: '#F0F0F0' // Custom assistant message bubble color
+          },
+          fontSizes: {
+            medium: '1.1rem' // Slightly larger default font
+          },
+          spacing: {
+            md: '1.2rem' // More spacing
+          }
+        }}
+      />
+    </div>
+  );
+}
+```
+
+This approach allows you to override specific theme properties while keeping the rest of the default theme. The component will intelligently merge your custom theme values with the default theme based on the selected mode.
+
+### 3. Theme Provider Integration
+
+For global theming across your application, you can use the ThemeProvider from styled-components:
 
 ```jsx
 import { SelectChat, createTheme } from 'llm-select-and-chat';
@@ -276,6 +326,62 @@ function App() {
       <SelectChat apiKey="your-api-key" />
     </ThemeProvider>
   );
+}
+```
+
+### Theme Properties
+
+The theme object supports the following properties that can be customized:
+
+```typescript
+interface ThemeProps {
+  colors: {
+    primary: string;      // Primary color for buttons and accents
+    primaryDark: string;  // Darker variant of primary
+    primaryLight: string; // Lighter variant of primary
+    secondary: string;    // Secondary color
+    background: string;   // Main background color
+    backgroundLight: string; // Lighter background for contrast areas
+    backgroundDisabled: string; // Background for disabled elements
+    surface: string;      // Surface color for cards and panels
+    text: string;         // Main text color
+    textSecondary: string; // Secondary text color
+    textLight: string;    // Lighter text for less emphasis
+    textOnPrimary: string; // Text color on primary background
+    border: string;       // Border color
+    error: string;        // Error color
+    success: string;      // Success color
+    warning: string;      // Warning color
+    info: string;         // Info color
+    highlight: string;    // Highlight color
+    userMessage: string;  // Background for user messages
+    assistantMessage: string; // Background for assistant messages
+  };
+  fontSizes: {
+    xsmall: string;  // 12px
+    small: string;   // 14px
+    medium: string;  // 16px
+    large: string;   // 20px
+    xlarge: string;  // 24px
+  };
+  spacing: {
+    xs: string; // Extra small spacing
+    sm: string; // Small spacing
+    md: string; // Medium spacing
+    lg: string; // Large spacing
+    xl: string; // Extra large spacing
+  };
+  borderRadius: {
+    small: string;  // Small border radius
+    medium: string; // Medium border radius
+    large: string;  // Large border radius
+    pill: string;   // Pill-shaped border radius
+  };
+  boxShadow: {
+    small: string;  // Light shadow
+    medium: string; // Medium shadow
+    large: string;  // Heavy shadow
+  };
 }
 ```
 
@@ -607,38 +713,65 @@ function GeminiChatApp() {
 }
 ```
 
-### Custom Styling
+### Custom Styling with Direct Theme Props
 
 ```jsx
 import React from 'react';
-import { SelectChat, createTheme } from 'llm-select-and-chat';
-import { ThemeProvider } from 'styled-components';
+import { SelectChat } from 'llm-select-and-chat';
 
-function CustomStyledChatApp() {
-  // Create a custom purple theme
-  const purpleTheme = createTheme('dark');
-  purpleTheme.colors.primary = '#9C27B0';
-  purpleTheme.colors.secondary = '#E1BEE7';
-  purpleTheme.colors.border = '#CE93D8';
-  purpleTheme.colors.userMessage = '#D1C4E9';
-  purpleTheme.colors.assistantMessage = '#212121';
-
+function CustomThemedChatApp() {
   return (
-    <ThemeProvider theme={purpleTheme}>
-      <div style={{ height: '600px', width: '350px' }}>
-        <SelectChat 
-          apiKey="your-api-key"
-          userPreferences={{
-            fontSize: 'large',
-            codeHighlighting: true,
-            showTimestamps: true
-          }}
-        />
-      </div>
-    </ThemeProvider>
+    <div style={{ height: '600px', width: '350px' }}>
+      <SelectChat 
+        apiKey="your-api-key"
+        theme="dark" // Base theme
+        customTheme={{
+          // Override specific color properties
+          colors: {
+            primary: '#9C27B0',          // Purple primary color
+            primaryLight: '#E1BEE7',     // Light purple 
+            userMessage: '#4A148C',      // Dark purple for user messages
+            assistantMessage: '#212121', // Dark background for assistant messages
+            highlight: '#CE93D8',        // Light purple highlight
+            textOnPrimary: '#FFFFFF',    // White text on primary color
+          },
+          // Customize spacing
+          spacing: {
+            md: '1.2rem',  // Slightly more medium spacing
+          },
+          // Customize typography
+          fontSizes: {
+            small: '0.9rem',
+            medium: '1.05rem',
+          },
+          // Customize border radius for a more rounded look
+          borderRadius: {
+            medium: '0.75rem',
+          },
+          // Enhance shadow for more depth
+          boxShadow: {
+            medium: '0 6px 12px rgba(156, 39, 176, 0.15)',
+          }
+        }}
+        userPreferences={{
+          fontSize: 'medium',
+          codeHighlighting: true,
+          showTimestamps: true
+        }}
+        onSelectionCapture={(selection) => {
+          console.log('Selection captured:', selection);
+        }}
+      />
+    </div>
   );
 }
 ```
+
+This example demonstrates:
+- Starting with a dark base theme
+- Applying a consistent purple color scheme
+- Customizing spacing, typography, and UI elements
+- Combining theme customization with user preferences
 
 ### Saving Conversations
 
@@ -691,6 +824,9 @@ All components and functions come with full TypeScript definitions. The main typ
 - `LLMProvider`: Configuration for an LLM provider
 - `UserPreferences`: User preference options
 - `Attachment`: Structure for file/image attachments
+- `ThemeProps`: Theme structure for customizing the component's appearance
+
+For detailed theme customization, the `ThemeProps` interface provides a complete structure of all themeable properties including colors, spacing, typography, and more. See the [Theme Customization](#theme-customization) section for examples and usage.
 
 ## License
 

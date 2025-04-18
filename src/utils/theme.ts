@@ -84,6 +84,7 @@ export const lightTheme: ThemeColors = {
   backgroundLight: '#f8fafc',
   backgroundDisabled: '#e2e8f0',
   surface: '#f1f5f9',
+  //text: '#0f172a',
   text: '#0f172a',
   textSecondary: '#475569',
   textLight: '#94a3b8',
@@ -121,13 +122,17 @@ export const darkTheme: ThemeColors = {
   assistantMessage: '#1e293b',
 };
 
-export function createTheme(mode: 'light' | 'dark'): ThemeProps {
-  const theme = mode === 'light' ? lightTheme : darkTheme;
+export function createTheme(mode: 'light' | 'dark', customColors?: Partial<ThemeColors>): ThemeProps {
+  // Start with the base theme based on mode
+  const baseTheme = mode === 'light' ? lightTheme : darkTheme;
+  
+  // Merge base theme with custom colors if provided
+  const mergedColors = customColors 
+    ? { ...baseTheme, ...customColors } 
+    : baseTheme;
   
   return {
-    colors: {
-      ...theme,
-    },
+    colors: mergedColors,
     fontSizes: {
       xsmall: '0.75rem',  // 12px
       small: '0.875rem',  // 14px
