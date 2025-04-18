@@ -162,5 +162,52 @@ const chat = initChatInterface({
 });</code></pre>
     <p>For more details, refer to the <a href="https://github.com/yourusername/llm-select-and-chat" target="_blank">documentation</a>.</p>
   </div>
+
+  <script>
+    // Initialize when everything is loaded
+    window.addEventListener('DOMContentLoaded', async () => {
+      const apiKey = localStorage.getItem('llm-select-chat-api-key') || '';
+      
+      // Get the chat container
+      const chatContainer = document.getElementById('chat-container');
+      
+      // Initialize with system prompts from JSON file
+      const selectChat = await LLMSelectAndChat.initSelectChat({
+        container: chatContainer,
+        systemPromptsPath: './system-prompts.json', // Load system prompts from file
+        apiKey: apiKey,
+        theme: 'light',
+        provider: {
+          type: 'openai',
+          apiKey: apiKey,
+          defaultParams: {
+            model: 'o4-mini',
+            temperature: 0.7,
+            maxTokens: 4000
+          }
+        }
+      });
+      
+      // Show a message when selection is captured
+      selectChat.on('selection', (selection) => {
+        console.log('Selection captured:', selection);
+      });
+      
+      // Show a message when a user message is sent
+      selectChat.on('message', (message) => {
+        console.log('User message sent:', message);
+      });
+      
+      // Show a message when a response is received
+      selectChat.on('response', (response) => {
+        console.log('Response received:', response);
+      });
+      
+      // Save API key when changed
+      selectChat.on('apiKeyChange', (newKey) => {
+        localStorage.setItem('llm-select-chat-api-key', newKey);
+      });
+    });
+  </script>
 </body>
 </html> 

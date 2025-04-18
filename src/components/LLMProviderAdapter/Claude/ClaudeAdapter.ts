@@ -188,6 +188,9 @@ export class ClaudeAdapter extends AbstractLLMAdapter {
       requestPayload.top_p = this.provider.defaultParams.topP;
     }
     
+    // Log the request details
+    this.logRequest('Claude', claudeMessages, requestPayload);
+    
     // Prepare request options
     const requestOptions: RequestInit = {
       method: 'POST',
@@ -206,12 +209,8 @@ export class ClaudeAdapter extends AbstractLLMAdapter {
         requestOptions
       );
       
-      // Extract content from response
-      if (response.content && response.content.length > 0) {
-        return response.content[0].text;
-      } else {
-        throw new Error('No completion found in the response.');
-      }
+      // Log the response
+      return this.logResponse('Claude', response);
     } catch (error) {
       console.error('Error sending messages to Claude:', error);
       throw error;
@@ -285,6 +284,9 @@ export class ClaudeAdapter extends AbstractLLMAdapter {
       requestPayload.top_p = this.provider.defaultParams.topP;
     }
     
+    // Log the request details
+    this.logRequest('Claude', claudeMessages, requestPayload);
+    
     // Prepare request options
     const requestOptions: RequestInit = {
       method: 'POST',
@@ -303,20 +305,17 @@ export class ClaudeAdapter extends AbstractLLMAdapter {
         requestOptions
       );
       
-      // Extract content from response
-      if (response.content && response.content.length > 0) {
-        const content = response.content[0].text;
-        
-        try {
-          // Some post-processing to handle potential markdown code blocks
-          const jsonContent = content.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
-          return JSON.parse(jsonContent) as T;
-        } catch (parseError) {
-          console.error('Error parsing JSON response:', parseError);
-          throw new Error('Failed to parse structured response from Claude.');
-        }
-      } else {
-        throw new Error('No completion found in the response.');
+      // Log the response
+      const responseContent = response.content && response.content.length > 0 ? response.content[0].text : '';
+      this.logResponse('Claude', response);
+      
+      try {
+        // Some post-processing to handle potential markdown code blocks
+        const jsonContent = responseContent.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
+        return JSON.parse(jsonContent) as T;
+      } catch (parseError) {
+        console.error('Error parsing JSON response:', parseError);
+        throw new Error('Failed to parse structured response from Claude.');
       }
     } catch (error) {
       console.error('Error sending messages to Claude for structured response:', error);

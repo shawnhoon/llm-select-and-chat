@@ -2,12 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { SelectChat } from './components/SelectChat';
 import type { SelectChatProps, Selection, Message } from './types';
+import { initialize } from './init';
 
 /**
  * Initialize the SelectChat component in a vanilla JS environment
  */
 export interface SelectChatInitOptions extends SelectChatProps {
   container: string | HTMLElement;
+  systemPromptsPath?: string; // Path to custom system prompts JSON file
 }
 
 /**
@@ -43,7 +45,12 @@ export interface SelectChatInstance {
 /**
  * Initialize the SelectChat component in a vanilla JS environment
  */
-export function initSelectChat(options: SelectChatInitOptions): SelectChatInstance {
+export async function initSelectChat(options: SelectChatInitOptions): Promise<SelectChatInstance> {
+  // Initialize system prompts if path provided
+  if (options.systemPromptsPath) {
+    await initialize({ systemPromptsPath: options.systemPromptsPath });
+  }
+  
   // Find the container element
   const containerElement = typeof options.container === 'string'
     ? document.querySelector(options.container)

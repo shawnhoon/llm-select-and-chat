@@ -1,5 +1,6 @@
 import { Message, LLMProvider, Selection, Attachment } from '../../../types';
 import { AbstractLLMAdapter } from '../BaseAdapter';
+import { AttachmentWithMime } from '../../../types/attachment';
 
 interface GeminiPart {
   text?: string;
@@ -22,17 +23,49 @@ interface GeminiCompletionRequest {
     topP?: number;
     topK?: number;
   };
+  systemInstruction?: {
+    parts: Array<{
+      text: string
+    }>
+  };
 }
 
+// Update to match the actual API field names
+interface GeminiApiRequest {
+  contents: GeminiContent[];
+  generation_config?: {
+    temperature?: number;
+    max_output_tokens?: number;
+    top_p?: number;
+    top_k?: number;
+  };
+  system_instruction?: {
+    parts: Array<{
+      text: string
+    }>
+  };
+}
+
+/**
+ * Interface representing the structure of a Gemini API completion response
+ */
 interface GeminiCompletionResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{
-        text: string;
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+        [key: string]: any;
       }>;
+      role?: string;
+      [key: string]: any;
     };
-    finishReason: string;
+    finishReason?: string;
+    index?: number;
+    safetyRatings?: any[];
+    [key: string]: any;
   }>;
+  promptFeedback?: any;
+  [key: string]: any;
 }
 
 export class GeminiAdapter extends AbstractLLMAdapter {
@@ -127,20 +160,26 @@ export class GeminiAdapter extends AbstractLLMAdapter {
       formattedContents = this.convertMessagesToGeminiFormat(processedMessages);
     }
     
+    // Filter out any messages with empty text content
+    formattedContents = formattedContents.filter(content => 
+      content.parts.some(part => part.text && part.text.trim() !== '')
+    );
+    
+    // If we have no valid messages, add a default user message
+    if (formattedContents.length === 0) {
+      formattedContents.push({
+        role: 'user',
+        parts: [{ text: "Hello, can you help me?" }]
+      });
+    }
+    
     const modelName = this.provider.defaultParams.model;
     const fullUrl = `${this.apiEndpoint}/${modelName}:generateContent?key=${this.provider.apiKey}`;
     
-    // Log for debugging
-    console.log("📷 Gemini request contents:", 
-      JSON.stringify({
-        modelName,
-        hasAttachments,
-        messagesCount: processedMessages.length,
-        attachmentsCount: processedMessages.reduce((count, msg) => 
-          count + (msg.attachments?.length || 0), 0)
-      })
-    );
+    // Generate system prompt based on selection
+    const systemPrompt = this.generateSystemMessage(selection);
     
+    // Create internal request body with our naming convention
     const requestBody: GeminiCompletionRequest = {
       contents: formattedContents,
       generationConfig: {
@@ -150,13 +189,55 @@ export class GeminiAdapter extends AbstractLLMAdapter {
       }
     };
     
+    // Add system instruction if available and model supports it
+    // Gemini 1.5 and 2.0 support systemInstruction
+    if (modelName.includes('gemini-1.5') || modelName.includes('gemini-2.0')) {
+      requestBody.systemInstruction = {
+        parts: [{ text: systemPrompt }]
+      };
+    } else {
+      // For older models, prepend system prompt as a user message
+      const hasSystemMessage = formattedContents.some(msg => 
+        msg.parts.some(part => part.text?.includes(systemPrompt))
+      );
+      
+      if (!hasSystemMessage && systemPrompt) {
+        formattedContents.unshift({
+          role: 'user',
+          parts: [{ text: `System: ${systemPrompt}` }]
+        });
+        requestBody.contents = formattedContents;
+      }
+    }
+    
+    // Convert to API request format with snake_case field names
+    const apiRequest: GeminiApiRequest = {
+      contents: requestBody.contents,
+      generation_config: {
+        temperature: requestBody.generationConfig?.temperature,
+        max_output_tokens: requestBody.generationConfig?.maxOutputTokens,
+        top_p: requestBody.generationConfig?.topP,
+        top_k: requestBody.generationConfig?.topK
+      }
+    };
+    
+    // Convert system instruction if present
+    if (requestBody.systemInstruction) {
+      apiRequest.system_instruction = {
+        parts: requestBody.systemInstruction.parts
+      };
+    }
+    
+    // Log the request details - log the internal format for consistency
+    this.logRequest('Gemini', formattedContents, requestBody);
+    
     try {
       const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(apiRequest)
       });
       
       if (!response.ok) {
@@ -170,7 +251,8 @@ export class GeminiAdapter extends AbstractLLMAdapter {
         throw new Error('No response from Gemini API');
       }
       
-      return data.candidates[0].content.parts[0].text;
+      // Log the response and return the content
+      return this.logResponse('Gemini', data);
     } catch (error) {
       console.error('Error calling Gemini API:', error);
       throw error;
@@ -251,6 +333,8 @@ export class GeminiAdapter extends AbstractLLMAdapter {
     
     // Add JSON structure instruction to the last user message
     const lastUserMessageIndex = messagesCopy.length - 1;
+    let jsonInstructionAdded = false;
+    
     for (let i = lastUserMessageIndex; i >= 0; i--) {
       if (messagesCopy[i].role === 'user') {
         if (responseFormat.schema) {
@@ -264,20 +348,106 @@ export class GeminiAdapter extends AbstractLLMAdapter {
             content: `${messagesCopy[i].content}\n\nPlease provide your response as a valid JSON object.`
           };
         }
+        jsonInstructionAdded = true;
         break;
       }
     }
     
+    // If no user message was found to add the JSON instruction to,
+    // add a new user message with the JSON instruction
+    if (!jsonInstructionAdded) {
+      const instruction = responseFormat.schema 
+        ? `Please provide a JSON object that adheres to the following schema: ${JSON.stringify(responseFormat.schema)}`
+        : `Please provide a valid JSON object.`;
+        
+      messagesCopy.push({
+        id: `json-instruction-${Date.now()}`,
+        role: 'user',
+        content: instruction,
+        timestamp: Date.now()
+      });
+    }
+    
+    // Log the structured request (using the internal logging format)
+    this.logRequest('Gemini (Structured JSON)', messagesCopy, { 
+      messages: messagesCopy, 
+      responseFormat 
+    });
+    
     // Send the modified messages to the standard completion endpoint
+    // Note: We're passing selection as null here since we've already processed it above
     const jsonResponseText = await this.sendMessages(messagesCopy, null);
     
     try {
       // Some post-processing to handle potential markdown code blocks
       const jsonContent = jsonResponseText.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
-      return JSON.parse(jsonContent) as T;
+      const parsedResponse = JSON.parse(jsonContent) as T;
+      
+      // Log the structured response
+      console.log('\n=================== STRUCTURED RESPONSE ===================');
+      console.log(`✅ STRUCTURED JSON FROM: GEMINI`);
+      console.log('📝 PARSED JSON RESPONSE:');
+      console.log(JSON.stringify(parsedResponse, null, 2));
+      console.log('===========================================================\n');
+      
+      return parsedResponse;
     } catch (parseError) {
       console.error('Error parsing JSON response:', parseError);
       throw new Error('Failed to parse structured response from Gemini.');
     }
+  }
+  
+  /**
+   * Extract the text content from the Gemini API response
+   * This is a helper method to properly parse the response structure
+   */
+  protected extractResponseContent(response: GeminiCompletionResponse): string {
+    if (!response.candidates || response.candidates.length === 0) {
+      throw new Error('No candidates in Gemini response');
+    }
+    
+    const candidate = response.candidates[0];
+    if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+      throw new Error('No content parts in Gemini response candidate');
+    }
+    
+    // Extract text from the first text part
+    const textPart = candidate.content.parts.find(part => part.text !== undefined);
+    if (!textPart || textPart.text === undefined) {
+      throw new Error('No text content found in Gemini response');
+    }
+    
+    return textPart.text;
+  }
+  
+  /**
+   * Override the logResponse method to correctly extract content from Gemini responses
+   */
+  protected logResponse(provider: string, response: any): string {
+    console.log('\n=================== LLM RESPONSE ===================');
+    console.log(`✅ RESPONSE FROM: ${provider.toUpperCase()}`);
+    
+    // Extract the response content from the Gemini-specific structure
+    let responseContent = '';
+    try {
+      responseContent = this.extractResponseContent(response);
+    } catch (error) {
+      console.error('Error extracting response content:', error);
+      console.log('📝 RAW RESPONSE:', JSON.stringify(response, null, 2));
+      responseContent = 'Error extracting response content. See console for raw response.';
+    }
+    
+    // Display full content for debugging
+    console.log('📝 FULL RESPONSE CONTENT:');
+    console.log(responseContent);
+    
+    // Log finish reason if available
+    if (response.candidates && response.candidates.length > 0 && response.candidates[0].finishReason) {
+      console.log(`🏁 FINISH REASON: ${response.candidates[0].finishReason}`);
+    }
+    
+    console.log('======================================================\n');
+    
+    return responseContent;
   }
 } 

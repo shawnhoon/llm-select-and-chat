@@ -153,53 +153,42 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
       formattedMessages = this.convertMessagesToOpenAIFormat(processedMessages);
     }
     
-    // Log for debugging
-    console.log("📷 OpenAI request contents:", 
-      JSON.stringify({
-        model: this.provider.defaultParams.model,
-        hasAttachments,
-        messagesCount: processedMessages.length,
-        attachmentsCount: processedMessages.reduce((count, msg) => 
-          count + (msg.attachments?.length || 0), 0)
-      })
-    );
+    // Generate system prompt based on selection and add it as the first message
+    // Only add if there's not already a system message at the beginning
+    const systemPrompt = this.generateSystemMessage(selection);
+    if (formattedMessages.length === 0 || formattedMessages[0].role !== 'system') {
+      formattedMessages.unshift({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
     
+    // Prepare the request body
     const model = this.provider.defaultParams.model;
     const requestBody: OpenAICompletionRequest = {
       model,
       messages: formattedMessages
     };
-
-    // Add parameters based on model compatibility
-    if (!requiresDefaultTemperature(model)) {
+    
+    // Add temperature parameter if supported by the model
+    if (this.provider.defaultParams.temperature !== undefined && !requiresDefaultTemperature(model)) {
       requestBody.temperature = this.provider.defaultParams.temperature;
-      requestBody.top_p = this.provider.defaultParams.topP;
-      requestBody.frequency_penalty = this.provider.defaultParams.frequencyPenalty;
-      requestBody.presence_penalty = this.provider.defaultParams.presencePenalty;
-      
+    }
+    
+    // Add max tokens parameter if specified
+    if (this.provider.defaultParams.maxTokens !== undefined) {
       // Only add max tokens for models that support non-default temperature
       if (isModelWithNewTokenFormat(model)) {
         requestBody.max_completion_tokens = this.provider.defaultParams.maxTokens;
-        console.log('Using max_completion_tokens for model:', model);
       } else {
         requestBody.max_tokens = this.provider.defaultParams.maxTokens;
-        console.log('Using max_tokens for model:', model);
       }
-    } else {
-      console.log('Using only default parameters for restricted model:', model);
     }
     
+    // Log the request details
+    this.logRequest('OpenAI', formattedMessages, requestBody);
+    
     try {
-      // Log the actual request payload for debugging
-      console.log('OpenAI API request payload:', {
-        model: requestBody.model,
-        hasTemperature: requestBody.temperature !== undefined,
-        hasMaxTokens: requestBody.max_tokens !== undefined,
-        hasMaxCompletionTokens: requestBody.max_completion_tokens !== undefined,
-        messagesCount: requestBody.messages.length,
-        hasAttachments: hasAttachments
-      });
-      
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
@@ -248,7 +237,8 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
             throw new Error('No response from OpenAI API on retry');
           }
           
-          return retryData.choices[0].message.content;
+          // Log the response
+          return this.logResponse('OpenAI', retryData);
         }
         
         throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
@@ -260,7 +250,9 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
         throw new Error('No response from OpenAI API');
       }
       
-      return data.choices[0].message.content;
+      // Log the response and return the content
+      return this.logResponse('OpenAI', data);
+      
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
       throw error;
@@ -346,6 +338,9 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
         break;
       }
     }
+    
+    // Generate system prompt but don't add it here - it will be added in sendMessages
+    // This avoids duplicating the logic for adding the system prompt
     
     // Send the modified messages to the standard completion endpoint
     const jsonResponseText = await this.sendMessages(messagesCopy, selection);

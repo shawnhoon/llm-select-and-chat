@@ -211,7 +211,7 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
       defaultParams: {
         model: selectedModel,
         temperature,
-        maxTokens: 4000
+        maxTokens: 500000
       }
     };
     

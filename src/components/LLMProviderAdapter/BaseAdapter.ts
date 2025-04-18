@@ -37,6 +37,152 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
   }
   
   /**
+   * Logs the full request payload and messages being sent to the LLM
+   * This helps with debugging what exactly is being sent to the model
+   */
+  protected logRequest(provider: string, messages: any, requestData: any): void {
+    console.log('\n==================== LLM REQUEST ====================');
+    console.log(`🚀 SENDING REQUEST TO: ${provider.toUpperCase()}`);
+    console.log(`📝 MODEL: ${requestData.model || this.provider.defaultParams.model}`);
+    console.log('📊 REQUEST PARAMETERS:', JSON.stringify({
+      temperature: requestData.temperature || requestData.generationConfig?.temperature || this.provider.defaultParams.temperature,
+      maxTokens: requestData.max_tokens || requestData.max_completion_tokens || requestData.generationConfig?.maxOutputTokens || this.provider.defaultParams.maxTokens,
+      topP: requestData.top_p || requestData.generationConfig?.topP || this.provider.defaultParams.topP,
+    }, null, 2));
+    
+    // Check for system prompt in various formats
+    let systemPrompt = null;
+    
+    // For OpenAI: system prompts are in the messages array with role='system'
+    if (Array.isArray(requestData.messages)) {
+      const systemMessage = requestData.messages.find((msg: any) => msg.role === 'system');
+      if (systemMessage) {
+        systemPrompt = systemMessage.content;
+      }
+    }
+    
+    // For Claude: system prompts are in the system field
+    if (requestData.system) {
+      systemPrompt = requestData.system;
+    }
+    
+    // For Gemini: system prompts are in systemInstruction
+    if (requestData.systemInstruction?.parts?.[0]?.text) {
+      systemPrompt = requestData.systemInstruction.parts[0].text;
+    }
+    
+    // If we found a system prompt, log it
+    if (systemPrompt) {
+      console.log('🧠 SYSTEM PROMPT:', systemPrompt);
+    } else {
+      console.log('🧠 SYSTEM PROMPT: None specified');
+    }
+    
+    // Full request payload (without API keys)
+    const sanitizedRequest = { ...requestData };
+    delete sanitizedRequest.api_key;
+    delete sanitizedRequest.apiKey;
+    console.log('📦 FULL REQUEST PAYLOAD:', JSON.stringify(sanitizedRequest, null, 2));
+    
+    // Log messages with condensed format for readability
+    console.log('💬 MESSAGES:');
+    const messagesToLog = Array.isArray(messages) ? messages : 
+                         (requestData.messages || requestData.contents || []);
+    
+    messagesToLog.forEach((msg: any, index: number) => {
+      const role = msg.role || 'unknown';
+      let content = '';
+      
+      if (typeof msg.content === 'string') {
+        // For text-only content
+        content = msg.content.length > 100 ? 
+                  `${msg.content.substring(0, 100)}... (${msg.content.length} chars)` : 
+                  msg.content;
+      } else if (Array.isArray(msg.content)) {
+        // For multimodal content
+        content = `[Multimodal content with ${msg.content.length} parts]`;
+      } else if (msg.parts) {
+        // For Gemini-style parts
+        const textParts = msg.parts.filter((part: any) => part.text).length;
+        const imageParts = msg.parts.filter((part: any) => part.inlineData).length;
+        content = `[${textParts} text part(s), ${imageParts} image part(s)]`;
+        
+        // Show preview of first text part if available
+        const firstTextPart = msg.parts.find((part: any) => part.text);
+        if (firstTextPart && firstTextPart.text) {
+          content += ` - "${firstTextPart.text.substring(0, 80)}${firstTextPart.text.length > 80 ? '...' : ''}"`;
+        }
+      }
+      
+      console.log(`  [${index + 1}] ${role.toUpperCase()}: ${content}`);
+    });
+    
+    // Attempt to detect if the messages include a selection
+    const hasSelection = messagesToLog.some((msg: any) => {
+      if (typeof msg.content === 'string') {
+        return msg.content.includes('Selected text:') || 
+               msg.content.includes('Context before selection:') ||
+               msg.content.includes('Context after selection:');
+      } else if (msg.parts) {
+        return msg.parts.some((part: any) => 
+          part.text && (
+            part.text.includes('Selected text:') || 
+            part.text.includes('Context before selection:') ||
+            part.text.includes('Context after selection:')
+          )
+        );
+      }
+      return false;
+    });
+    
+    console.log(`🔍 INCLUDES SELECTION: ${hasSelection}`);
+    console.log('======================================================\n');
+  }
+  
+  /**
+   * Logs the full response received from the LLM
+   * This helps with debugging what exactly is being returned by the model
+   */
+  protected logResponse(provider: string, response: any): string {
+    console.log('\n=================== LLM RESPONSE ===================');
+    console.log(`✅ RESPONSE FROM: ${provider.toUpperCase()}`);
+    
+    // Log token usage if available
+    if (response.usage) {
+      console.log('📊 TOKEN USAGE:', JSON.stringify({
+        promptTokens: response.usage.prompt_tokens,
+        completionTokens: response.usage.completion_tokens,
+        totalTokens: response.usage.total_tokens
+      }, null, 2));
+    }
+    
+    // Log the full response content
+    let responseContent = '';
+    if (response.choices && response.choices.length > 0) {
+      if (response.choices[0].message) {
+        responseContent = response.choices[0].message.content;
+      } else if (response.choices[0].text) {
+        responseContent = response.choices[0].text;
+      }
+    } else if (response.content && response.content.length > 0) {
+      responseContent = response.content[0].text;
+    }
+    
+    // Display full content for debugging
+    console.log('📝 FULL RESPONSE CONTENT:');
+    console.log(responseContent);
+    
+    // Log finish reason if available
+    if (response.choices && response.choices.length > 0 && response.choices[0].finish_reason) {
+      console.log(`🏁 FINISH REASON: ${response.choices[0].finish_reason}`);
+    }
+    
+    console.log('======================================================\n');
+    
+    return responseContent;
+  }
+  
+  /**
    * Generate system message based on the selection and context
    */
   protected generateSystemMessage(selection: Selection | null): string {

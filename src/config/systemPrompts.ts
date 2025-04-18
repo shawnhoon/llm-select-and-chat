@@ -1,28 +1,28 @@
-import { LLMProvider } from '../types';
-
 /**
- * Configuration for system prompts
+ * Default system prompt templates for the SelectChat component
+ * These templates can be used to guide the AI's responses for different use cases
  */
-export interface SystemPromptConfig {
-  template: string;
-  useSearch?: boolean;
-  contextLevels?: {
-    primary?: boolean;
-    immediate?: boolean;
-    local?: boolean;
-    broader?: boolean;
-    conversational?: boolean;
-    external?: boolean;
-  };
+
+import { SystemPromptConfig, loadSystemPromptsFromFile } from '../utils/configLoader';
+
+// Export the type directly, not as a type alias
+export type { SystemPromptConfig as SystemPromptTemplate };
+
+export interface SystemPromptsCollection {
+  [key: string]: SystemPromptConfig;
 }
 
 /**
- * Default system prompt templates
+ * System prompts storage
+ * This will be populated with both default and loaded prompts
  */
-export const DEFAULT_SYSTEM_PROMPTS: Record<string, SystemPromptConfig> = {
+let systemPrompts: SystemPromptsCollection = {};
+
+// Default system prompts defined in the code
+// These will be used as fallbacks if external loading fails
+export const defaultSystemPrompts: SystemPromptsCollection = {
   standard: {
-    template: `
-1. **Primary Focus:** 
+    template: `1. **Primary Focus:** 
    - Start with the specifically selected text and user's current question
 \${useSearch ? \`
    - ALWAYS search when questions ask about:
@@ -97,8 +97,7 @@ IMPORTANT:
 - Balance document content with verified external information
 
 Always ground your initial response in the document content, then enhance with search when needed for accuracy or currency.
-\` : 'Focus on analyzing and explaining the document content based on the available context.'}
-`,
+\` : 'Focus on analyzing and explaining the document content based on the available context.'}`,
     useSearch: false,
     contextLevels: {
       primary: true,
@@ -128,68 +127,87 @@ You are analyzing selected text with surrounding context.
       conversational: false,
       external: false
     }
+  },
+  code: {
+    template: `
+You are analyzing selected code with surrounding context.
+
+1. **Primary Focus:** 
+   - Focus on the specifically selected code and the user's question
+   - Explain the purpose, functionality, and implementation details of the selected code
+
+2. **Code Structure:**
+   - Identify key patterns, design principles, and architectural elements
+   - Explain how the selected code fits into the broader codebase
+
+3. **Technical Analysis:**
+   - Identify potential bugs, performance issues, or security concerns
+   - Suggest improvements or optimizations when appropriate
+
+4. **Language-Specific Context:**
+   - Provide language-specific best practices and idioms
+   - Explain language features being used in the code
+
+Keep explanations technical but clear, and focus on helping the user understand both functionality and implementation details.
+`,
+    useSearch: false,
+    contextLevels: {
+      primary: true,
+      immediate: true,
+      local: true,
+      broader: false,
+      conversational: true,
+      external: false
+    }
   }
 };
 
 /**
- * Load a system prompt configuration by name
- * @param name Name of the prompt template
- * @returns System prompt configuration
+ * Initialize system prompts by loading from file
+ * Merges with default prompts
+ * @param path Path to the system prompts JSON file
  */
-export function loadSystemPrompt(name: string): SystemPromptConfig {
-  return DEFAULT_SYSTEM_PROMPTS[name] || DEFAULT_SYSTEM_PROMPTS.standard;
+export async function initializeSystemPrompts(path?: string): Promise<void> {
+  // Start with default prompts
+  systemPrompts = { ...defaultSystemPrompts };
+  
+  // If path is provided, try to load additional prompts
+  if (path) {
+    try {
+      const loadedPrompts = await loadSystemPromptsFromFile(path);
+      
+      // Merge with defaults (loaded prompts take precedence)
+      systemPrompts = {
+        ...systemPrompts,
+        ...loadedPrompts
+      };
+      
+      console.log('✅ System prompts initialized successfully');
+      console.log(`📋 Available templates: ${Object.keys(systemPrompts).join(', ')}`);
+    } catch (error) {
+      console.error('❌ Failed to load system prompts from file:', error);
+      console.log('👉 Using default system prompts only');
+    }
+  } else {
+    console.log('ℹ️ No external prompts file specified, using default system prompts only');
+  }
 }
 
 /**
- * Enhance an LLM provider with system prompt configuration
- * @param provider The provider to enhance
- * @param promptConfig System prompt configuration to apply
- * @returns Enhanced provider with system prompt
+ * Get a system prompt configuration with search enabled/disabled
+ * @param {string} promptName - The name of the prompt template to use
+ * @param {boolean} enableSearch - Whether to enable search functionality
+ * @returns {Object} System prompt configuration object
  */
-export function enhanceProviderWithSystemPrompt(
-  provider: LLMProvider, 
-  promptConfig: SystemPromptConfig | string
-): LLMProvider {
-  // If promptConfig is a string, load the named configuration
-  const config = typeof promptConfig === 'string' 
-    ? loadSystemPrompt(promptConfig) 
-    : promptConfig;
+export const getSystemPrompt = (promptName = 'standard', enableSearch = false) => {
+  // Look first in the combined prompts collection, then fall back to defaults
+  const promptTemplate = 
+    (systemPrompts[promptName] || defaultSystemPrompts[promptName] || defaultSystemPrompts.standard);
   
   return {
-    ...provider,
-    systemPrompt: {
-      template: config.template,
-      useSearch: config.useSearch,
-      contextLevels: config.contextLevels
-    }
+    ...promptTemplate,
+    useSearch: enableSearch
   };
-}
+};
 
-/**
- * Load system prompt templates from a JSON file
- * @param path Path to the JSON configuration file
- * @returns Promise resolving to the system prompt configurations
- */
-export async function loadSystemPromptsFromFile(path: string): Promise<Record<string, SystemPromptConfig>> {
-  try {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error(`Failed to load system prompt configurations: ${response.statusText}`);
-    }
-    const data = await response.json();
-    
-    // Validate that the loaded data is a record of SystemPromptConfig objects
-    if (typeof data !== 'object' || data === null) {
-      throw new Error('Invalid system prompt configurations format: expected object');
-    }
-    
-    // Log the successful loading
-    console.log(`🧠 Loaded ${Object.keys(data).length} system prompt templates from ${path}`);
-    console.log(`Available templates: ${Object.keys(data).join(', ')}`);
-    
-    return data;
-  } catch (error) {
-    console.error('Error loading system prompt configurations:', error);
-    return DEFAULT_SYSTEM_PROMPTS;
-  }
-} 
+export default defaultSystemPrompts; 

@@ -7,7 +7,8 @@ import { ChatInterface } from '../ChatInterface';
 import { LLMAdapterFactory } from '../LLMProviderAdapter';
 import { SelectionCaptureProvider } from '../SelectionCapture';
 import { uuid } from '../../utils/uuid';
-import { enhanceProviderWithSystemPrompt } from '../../utils/configLoader';
+import { enhanceProviderWithSystemPrompt, SystemPromptConfig } from '../../utils/configLoader';
+import { getSystemPrompt } from '../../config';
 
 const SelectChatContainer = styled.div`
   display: flex;
@@ -133,9 +134,12 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       : (theme as 'light' | 'dark')
   );
   
+  // Use default system prompt if not provided
+  const effectiveSystemPrompt = systemPromptConfig || getSystemPrompt('standard', false);
+  
   // Enhance the provider with system prompt configuration if provided
-  const enhancedInitialProvider = systemPromptConfig && initialProvider 
-    ? enhanceProviderWithSystemPrompt(initialProvider, systemPromptConfig)
+  const enhancedInitialProvider = initialProvider 
+    ? enhanceProviderWithSystemPrompt(initialProvider, effectiveSystemPrompt)
     : initialProvider;
   
   // Add state for current provider
