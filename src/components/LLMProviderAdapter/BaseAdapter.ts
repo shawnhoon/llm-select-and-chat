@@ -246,6 +246,11 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
   protected formatSelectionWithContext(selection: Selection): string {
     let formattedText = '';
     
+    // Log the selection context for debugging
+    console.log('%c📝 FORMATTING SELECTION CONTEXT', 'background: #3F51B5; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('Context before length:', selection.contextBefore?.length || 0);
+    console.log('Context after length:', selection.contextAfter?.length || 0);
+    
     if (selection.contextBefore) {
       formattedText += `Context before selection: "${selection.contextBefore}"\n\n`;
     }
@@ -255,6 +260,11 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     if (selection.contextAfter) {
       formattedText += `Context after selection: "${selection.contextAfter}"`;
     }
+    
+    // Log the formatted result
+    console.log('Formatted text length:', formattedText.length);
+    console.log('Formatted text includes context before:', formattedText.includes('Context before selection'));
+    console.log('Formatted text includes context after:', formattedText.includes('Context after selection'));
     
     return formattedText;
   }

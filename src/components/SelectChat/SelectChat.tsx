@@ -306,8 +306,8 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   const handleSelectionCapture = (newSelection: Selection) => {
     console.log('%c📌 SELECTION CAPTURED', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
     console.log('Selection text:', newSelection.text?.substring(0, 100) + (newSelection.text?.length > 100 ? '...' : ''));
-    console.log('Context before:', newSelection.contextBefore?.substring(0, 50) + (newSelection.contextBefore?.length ?? 0 > 50 ? '...' : ''));
-    console.log('Context after:', newSelection.contextAfter?.substring(0, 50) + (newSelection.contextAfter?.length ?? 0 > 50 ? '...' : ''));
+    console.log('Context before:', newSelection.contextBefore?.substring(0, 50) + ((newSelection.contextBefore?.length ?? 0) > 50 ? '...' : ''));
+    console.log('Context after:', newSelection.contextAfter?.substring(0, 50) + ((newSelection.contextAfter?.length ?? 0) > 50 ? '...' : ''));
     console.log('URL:', newSelection.url);
     console.log('Location:', newSelection.location);
     
@@ -346,8 +346,8 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       if (selection) {
         console.log('%c🔍 SELECTION BEING SENT TO LLM', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
         console.log('Selection text:', selection.text?.substring(0, 100) + (selection.text?.length > 100 ? '...' : ''));
-        console.log('Context before:', selection.contextBefore?.substring(0, 50) + (selection.contextBefore?.length ?? 0 > 50 ? '...' : ''));
-        console.log('Context after:', selection.contextAfter?.substring(0, 50) + (selection.contextAfter?.length ?? 0 > 50 ? '...' : ''));
+        console.log('Context before:', selection.contextBefore?.substring(0, 50) + ((selection.contextBefore?.length ?? 0) > 50 ? '...' : ''));
+        console.log('Context after:', selection.contextAfter?.substring(0, 50) + ((selection.contextAfter?.length ?? 0) > 50 ? '...' : ''));
         console.log('URL:', selection.url);
         console.log('Location:', selection.location);
         
