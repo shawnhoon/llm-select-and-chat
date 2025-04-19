@@ -292,6 +292,34 @@ const RemoveImageButton = styled.button`
   }
 `;
 
+const SelectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const SelectionTitle = styled.h4`
+  margin: 0;
+  font-size: ${props => props.theme.fontSizes.medium};
+  color: ${props => props.theme.colors.text};
+  font-weight: 600;
+`;
+
+const ClearSelectionButton = styled.button`
+  background-color: transparent;
+  color: ${props => props.theme.colors.primary};
+  border: none;
+  cursor: pointer;
+  font-size: ${props => props.theme.fontSizes.small};
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   conversation,
   userPreferences,
@@ -422,7 +450,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
   
-  // Handle keyboard events (Enter to send, Shift+Enter for new line)
+  // Handle keyboard events (Enter to send, Shift+Enter for new line, Escape to clear selection)
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (!e.shiftKey) {
@@ -432,6 +460,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Shift+Enter - will naturally add a newline, then we adjust height
         setTimeout(adjustInputHeight, 0);
       }
+    } else if (e.key === 'Escape' && currentSelection) {
+      // Clear the selection when Escape is pressed if there's a current selection
+      e.preventDefault();
+      setCurrentSelection(null);
     }
   };
   
@@ -592,6 +624,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setApiKeys(newKeys);
   };
   
+  // Add a helper method to handle clearing the selection
+  const handleClearSelection = () => {
+    if (currentSelection) {
+      setCurrentSelection(null);
+    }
+  };
+  
   return (
     <ChatContainer>
       <Header>
@@ -615,6 +654,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <SelectionContext>
             <SelectionBar />
             <SelectionContent>
+              <SelectionHeader>
+                <SelectionTitle>Selected Text</SelectionTitle>
+                <ClearSelectionButton onClick={handleClearSelection} title="Clear selection (Esc)">
+                  ✕
+                </ClearSelectionButton>
+              </SelectionHeader>
               {formatSelectionContext(currentSelection)}
               <SelectionInfo>
                 <span>{getWordCount(currentSelection.text)} words selected</span>
