@@ -130,6 +130,9 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
         // Format the selection with context
         const selectionText = this.formatSelectionWithContext(selection);
         
+        // Log document sizes for debugging
+        console.log(`📄 OpenAIAdapter: Processing selection with total formatted length: ${selectionText.length} characters`); 
+        
         // Add to the existing message
         processedMessages[firstUserIndex] = {
           ...processedMessages[firstUserIndex],
@@ -165,6 +168,16 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
     
     // Prepare the request body
     const model = this.provider.defaultParams.model;
+    
+    // Ensure we have an appropriate maxTokens value for processing large documents
+    // For o4 models, increase the default max tokens for handling large documents
+    let maxTokens = this.provider.defaultParams.maxTokens;
+    if ((model.includes('o4') || model.includes('gpt-4.1') || model.includes('gemini-2.0')) && 
+        (!maxTokens || maxTokens < 32000)) {
+      console.log(`📊 Adjusting maxTokens for ${model} from ${maxTokens || 'default'} to 32000 for large context window`);
+      maxTokens = 32000;
+    }
+    
     const requestBody: OpenAICompletionRequest = {
       model,
       messages: formattedMessages
@@ -176,12 +189,12 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
     }
     
     // Add max tokens parameter if specified
-    if (this.provider.defaultParams.maxTokens !== undefined) {
+    if (maxTokens !== undefined) {
       // Only add max tokens for models that support non-default temperature
       if (isModelWithNewTokenFormat(model)) {
-        requestBody.max_completion_tokens = this.provider.defaultParams.maxTokens;
+        requestBody.max_completion_tokens = maxTokens;
       } else {
-        requestBody.max_tokens = this.provider.defaultParams.maxTokens;
+        requestBody.max_tokens = maxTokens;
       }
     }
     

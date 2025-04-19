@@ -290,10 +290,20 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     }
     
     // Only add full document if it exists and differs from the combined context
+    // Increase character limit to take advantage of large context windows in modern LLMs
+    // Approximately 100K chars = 25K tokens which is well within the context limits
+    const MAX_DOCUMENT_CHARS = 100000;
     if (selection.fullDocument && 
         selection.fullDocument.length > 0 && 
         (selection.fullDocument !== selection.contextBefore + selection.text + selection.contextAfter)) {
-      formattedText += `\n\nFull document: "${selection.fullDocument.substring(0, 1000)}${selection.fullDocument.length > 1000 ? '...' : ''}"`;
+      
+      // Log the document truncation if it happens
+      const isDocumentTruncated = selection.fullDocument.length > MAX_DOCUMENT_CHARS;
+      if (isDocumentTruncated) {
+        console.log(`📄 Document truncated from ${selection.fullDocument.length} to ${MAX_DOCUMENT_CHARS} characters`);
+      }
+      
+      formattedText += `\n\nFull document: "${selection.fullDocument.substring(0, MAX_DOCUMENT_CHARS)}${selection.fullDocument.length > MAX_DOCUMENT_CHARS ? '...' : ''}"`;
     }
     
     // Log the formatted result
