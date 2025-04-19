@@ -342,10 +342,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Add a new effect to handle selection changes
   useEffect(() => {
     console.log('Selection in ChatInterface updated:', selection);
-    if (selection && (!currentSelection || selection.text !== currentSelection.text)) {
-      setCurrentSelection(selection);
+    
+    if (selection) {
+      // Create a deep copy to ensure all properties are preserved
+      const selectionCopy = {
+        text: selection.text || '',
+        contextBefore: selection.contextBefore || '',
+        contextAfter: selection.contextAfter || '',
+        url: selection.url || '',
+        location: selection.location || '',
+        fullDocument: selection.fullDocument || ''
+      };
+      
+      console.log('Selection copy created with:', {
+        textLength: selectionCopy.text.length,
+        contextBeforeLength: selectionCopy.contextBefore.length,
+        contextAfterLength: selectionCopy.contextAfter.length,
+        keys: Object.keys(selectionCopy).join(', ')
+      });
+      
+      setCurrentSelection(selectionCopy);
+    } else if (selection === null) {
+      setCurrentSelection(null);
     }
-  }, [selection, currentSelection]);
+  }, [selection]);
   
   // Update API key effect when llmProvider changes
   useEffect(() => {
@@ -468,17 +488,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const formatSelectionContext = (selection: Selection) => {
     if (!selection) return null;
     
-    // Always show context sections, even if empty
-    const beforeContext = selection.contextBefore || '';
-    const afterContext = selection.contextAfter || '';
+    // Use optional chaining and nullish coalescing to safely access properties
+    const beforeContext = selection.contextBefore ?? '';
+    const afterContext = selection.contextAfter ?? '';
     
-    // Log context info for debugging
+    // Enhanced logging to help debug context issues
     console.log('Rendering selection context:', {
-      selectionTextLength: selection.text.length,
+      selectionTextLength: selection.text?.length || 0,
       beforeContextLength: beforeContext.length,
       afterContextLength: afterContext.length,
-      hasBeforeContext: !!beforeContext,
-      hasAfterContext: !!afterContext
+      hasBeforeContext: beforeContext.length > 0,
+      hasAfterContext: afterContext.length > 0,
+      beforeContextSample: beforeContext ? beforeContext.substring(0, Math.min(50, beforeContext.length)) + (beforeContext.length > 50 ? '...' : '') : '',
+      afterContextSample: afterContext ? afterContext.substring(0, Math.min(50, afterContext.length)) + (afterContext.length > 50 ? '...' : '') : '',
+      selectionKeys: Object.keys(selection).join(', ')
     });
     
     return (
@@ -520,11 +543,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   // Add a helper method to handle asking about the selection
   const handleAskAboutSelection = () => {
-    if (selection) {
+    if (currentSelection) {
       // Create a more informative query with context references
-      const contextQuery = selection.text.length > 80 
-        ? `Tell me about this selected text: "${selection.text.substring(0, 80)}..."`
-        : `Tell me about this selected text: "${selection.text}"`;
+      const contextQuery = currentSelection.text.length > 80 
+        ? `Tell me about this selected text: "${currentSelection.text.substring(0, 80)}..."`
+        : `Tell me about this selected text: "${currentSelection.text}"`;
       
       setInputValue(contextQuery);
       
@@ -567,13 +590,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           />
         )}
         
-        {selection && (
+        {currentSelection && (
           <SelectionContext>
             <SelectionBar />
             <SelectionContent>
-              {formatSelectionContext(selection)}
+              {formatSelectionContext(currentSelection)}
               <SelectionInfo>
-                <span>{getWordCount(selection.text)} words selected</span>
+                <span>{getWordCount(currentSelection.text)} words selected</span>
                 <SelectionActionButton onClick={handleAskAboutSelection}>
                   Ask about this selection
                 </SelectionActionButton>
@@ -583,7 +606,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
       </Header>
       
-      {conversation.messages.length === 0 && !selection && (
+      {conversation.messages.length === 0 && !currentSelection && (
         <NoSelectionMessage>
           Select some text on the page to start chatting about it
           <KeyboardShortcutHint>

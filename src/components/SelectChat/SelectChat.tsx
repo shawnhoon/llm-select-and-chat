@@ -306,8 +306,10 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   const handleSelectionCapture = (newSelection: Selection) => {
     console.log('%c📌 SELECTION CAPTURED', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
     console.log('Selection text:', newSelection.text?.substring(0, 100) + (newSelection.text?.length > 100 ? '...' : ''));
-    console.log('Context before:', newSelection.contextBefore?.substring(0, 50) + ((newSelection.contextBefore?.length ?? 0) > 50 ? '...' : ''));
-    console.log('Context after:', newSelection.contextAfter?.substring(0, 50) + ((newSelection.contextAfter?.length ?? 0) > 50 ? '...' : ''));
+    console.log('Context before length:', newSelection.contextBefore?.length || 0);
+    console.log('Context after length:', newSelection.contextAfter?.length || 0);
+    console.log('Context before (first 50 chars):', newSelection.contextBefore?.substring(0, 50));
+    console.log('Context after (first 50 chars):', newSelection.contextAfter?.substring(0, 50));
     console.log('URL:', newSelection.url);
     console.log('Location:', newSelection.location);
     
@@ -320,12 +322,27 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     }
     
     console.log('Full selection object:', newSelection);
+    console.log('Selection object keys:', Object.keys(newSelection).join(', '));
     
-    setSelection(newSelection);
+    // Create a deep copy of the selection to avoid reference issues
+    const selectionCopy: Selection = {
+      text: newSelection.text,
+      contextBefore: newSelection.contextBefore,
+      contextAfter: newSelection.contextAfter,
+      url: newSelection.url,
+      location: newSelection.location,
+      fullDocument: newSelection.fullDocument
+    };
+    
+    console.log('Created selection copy with keys:', Object.keys(selectionCopy).join(', '));
+    console.log('Copy context before length:', selectionCopy.contextBefore?.length || 0);
+    console.log('Copy context after length:', selectionCopy.contextAfter?.length || 0);
+    
+    setSelection(selectionCopy);
     
     // Notify parent component if callback is provided
     if (onSelectionCapture) {
-      onSelectionCapture(newSelection);
+      onSelectionCapture(selectionCopy);
     }
     
     // Only update the conversation's updatedAt timestamp
@@ -346,8 +363,10 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       if (selection) {
         console.log('%c🔍 SELECTION BEING SENT TO LLM', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
         console.log('Selection text:', selection.text?.substring(0, 100) + (selection.text?.length > 100 ? '...' : ''));
-        console.log('Context before:', selection.contextBefore?.substring(0, 50) + ((selection.contextBefore?.length ?? 0) > 50 ? '...' : ''));
-        console.log('Context after:', selection.contextAfter?.substring(0, 50) + ((selection.contextAfter?.length ?? 0) > 50 ? '...' : ''));
+        console.log('Context before length:', selection.contextBefore?.length || 0);
+        console.log('Context after length:', selection.contextAfter?.length || 0);
+        console.log('Context before (first 50 chars):', selection.contextBefore?.substring(0, 50));
+        console.log('Context after (first 50 chars):', selection.contextAfter?.substring(0, 50));
         console.log('URL:', selection.url);
         console.log('Location:', selection.location);
         
