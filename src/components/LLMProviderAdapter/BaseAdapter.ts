@@ -203,6 +203,10 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
       systemMessage += 'I will provide the selected text along with some context around it. ';
     }
     
+    if (selection.fullDocument) {
+      systemMessage += 'I will also provide the full document for additional context if needed. ';
+    }
+    
     if (selection.url) {
       systemMessage += `The text comes from: ${selection.url}. `;
     }
@@ -237,6 +241,29 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
       });
     }
     
+    // Add document-specific information if selection exists
+    if (selection) {
+      // Add selection info
+      formattedPrompt += '\n\n--- Selection Information ---';
+      if (selection.url) {
+        formattedPrompt += `\nSource: ${selection.url}`;
+      }
+      if (selection.location) {
+        formattedPrompt += `\nLocation: ${selection.location}`;
+      }
+      formattedPrompt += `\nSelection Length: ${selection.text.length} characters`;
+      
+      // Add context info
+      if (selection.contextBefore || selection.contextAfter) {
+        formattedPrompt += `\nContext: Available ${selection.contextBefore ? 'before' : ''}${selection.contextBefore && selection.contextAfter ? ' and ' : ''}${selection.contextAfter ? 'after' : ''} selection`;
+      }
+      
+      // Add full document info
+      if (selection.fullDocument) {
+        formattedPrompt += `\nFull Document: Available (${selection.fullDocument.length} characters)`;
+      }
+    }
+    
     return formattedPrompt;
   }
   
@@ -250,6 +277,7 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     console.log('%c📝 FORMATTING SELECTION CONTEXT', 'background: #3F51B5; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
     console.log('Context before length:', selection.contextBefore?.length || 0);
     console.log('Context after length:', selection.contextAfter?.length || 0);
+    console.log('Full document length:', selection.fullDocument?.length || 0);
     
     if (selection.contextBefore) {
       formattedText += `Context before selection: "${selection.contextBefore}"\n\n`;
@@ -261,10 +289,18 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
       formattedText += `Context after selection: "${selection.contextAfter}"`;
     }
     
+    // Only add full document if it exists and differs from the combined context
+    if (selection.fullDocument && 
+        selection.fullDocument.length > 0 && 
+        (selection.fullDocument !== selection.contextBefore + selection.text + selection.contextAfter)) {
+      formattedText += `\n\nFull document: "${selection.fullDocument.substring(0, 1000)}${selection.fullDocument.length > 1000 ? '...' : ''}"`;
+    }
+    
     // Log the formatted result
     console.log('Formatted text length:', formattedText.length);
     console.log('Formatted text includes context before:', formattedText.includes('Context before selection'));
     console.log('Formatted text includes context after:', formattedText.includes('Context after selection'));
+    console.log('Formatted text includes full document:', formattedText.includes('Full document:'));
     
     return formattedText;
   }
