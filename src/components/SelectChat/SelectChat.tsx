@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Version: 1.0.1 - Context Preservation Fix (2024-05-29)
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { SelectChatProps, Conversation, Selection, UserPreferences, Message, LLMProvider, Attachment } from '../../types';
 import { createTheme, ThemeProps } from '../../utils/theme';
@@ -304,7 +305,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   
   // Handle selection capture from the SelectionCaptureProvider
   const handleSelectionCapture = (newSelection: Selection) => {
-    console.log('%c📌 SELECTION CAPTURED', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('%c�� SELECTION CAPTURED - v1.0.1', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
     console.log('Selection text:', newSelection.text?.substring(0, 100) + (newSelection.text?.length > 100 ? '...' : ''));
     console.log('Context before length:', newSelection.contextBefore?.length || 0);
     console.log('Context after length:', newSelection.contextAfter?.length || 0);
@@ -326,17 +327,19 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     
     // Create a deep copy of the selection to avoid reference issues
     const selectionCopy: Selection = {
-      text: newSelection.text,
-      contextBefore: newSelection.contextBefore,
-      contextAfter: newSelection.contextAfter,
-      url: newSelection.url,
-      location: newSelection.location,
-      fullDocument: newSelection.fullDocument
+      text: newSelection.text || '',
+      contextBefore: newSelection.contextBefore || '',
+      contextAfter: newSelection.contextAfter || '',
+      url: newSelection.url || '',
+      location: newSelection.location || '',
+      fullDocument: newSelection.fullDocument || ''
     };
     
     console.log('Created selection copy with keys:', Object.keys(selectionCopy).join(', '));
     console.log('Copy context before length:', selectionCopy.contextBefore?.length || 0);
     console.log('Copy context after length:', selectionCopy.contextAfter?.length || 0);
+    console.log('Context before sample:', selectionCopy.contextBefore?.substring(0, 50) + '...');
+    console.log('Context after sample:', selectionCopy.contextAfter?.substring(0, 50) + '...');
     
     setSelection(selectionCopy);
     
@@ -361,7 +364,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     try {
       // Add detailed logging for the selection object before sending to LLM
       if (selection) {
-        console.log('%c🔍 SELECTION BEING SENT TO LLM', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+        console.log('%c🔍 SELECTION BEING SENT TO LLM (v1.0.1)', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
         console.log('Selection text:', selection.text?.substring(0, 100) + (selection.text?.length > 100 ? '...' : ''));
         console.log('Context before length:', selection.contextBefore?.length || 0);
         console.log('Context after length:', selection.contextAfter?.length || 0);
@@ -369,6 +372,16 @@ export const SelectChat: React.FC<SelectChatProps> = ({
         console.log('Context after (first 50 chars):', selection.contextAfter?.substring(0, 50));
         console.log('URL:', selection.url);
         console.log('Location:', selection.location);
+        
+        // Add detailed property inspection
+        console.log('Selection object properties:');
+        Object.entries(selection).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            console.log(`- ${key}: ${value.length} chars${value.length > 0 ? ` (sample: "${value.substring(0, Math.min(30, value.length))}${value.length > 30 ? '...' : ''}")` : ''}`);
+          } else {
+            console.log(`- ${key}: ${value}`);
+          }
+        });
         
         // Add logging for full document context
         console.log('%c📄 DOCUMENT CONTEXT BEING SENT TO LLM', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');

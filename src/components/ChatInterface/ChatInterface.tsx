@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+// Version: 1.0.1 - Context Preservation Fix (2024-05-29)
 import styled from 'styled-components';
 import { Message as MessageType, Conversation, UserPreferences, LLMProvider, Selection, Attachment } from '../../types';
 import { Message } from './Message';
@@ -341,9 +342,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   // Add a new effect to handle selection changes
   useEffect(() => {
-    console.log('Selection in ChatInterface updated:', selection);
+    console.log('%c🔄 Selection in ChatInterface updated (v1.0.1):', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;', selection);
     
     if (selection) {
+      // Log all selection properties
+      console.log('Selection properties:');
+      Object.entries(selection).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          console.log(`- ${key}: ${value.length} chars${value.length > 0 ? ` (sample: "${value.substring(0, Math.min(30, value.length))}${value.length > 30 ? '...' : ''}")` : ''}`);
+        } else {
+          console.log(`- ${key}: ${value}`);
+        }
+      });
+      
       // Create a deep copy to ensure all properties are preserved
       const selectionCopy = {
         text: selection.text || '',
@@ -360,6 +371,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         contextAfterLength: selectionCopy.contextAfter.length,
         keys: Object.keys(selectionCopy).join(', ')
       });
+      
+      // Log context samples if they exist
+      if (selectionCopy.contextBefore && selectionCopy.contextBefore.length > 0) {
+        console.log('Context before sample:', selectionCopy.contextBefore.substring(0, Math.min(50, selectionCopy.contextBefore.length)) + '...');
+      }
+      
+      if (selectionCopy.contextAfter && selectionCopy.contextAfter.length > 0) {
+        console.log('Context after sample:', selectionCopy.contextAfter.substring(0, Math.min(50, selectionCopy.contextAfter.length)) + '...');
+      }
       
       setCurrentSelection(selectionCopy);
     } else if (selection === null) {
@@ -485,7 +505,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   };
   
-  const formatSelectionContext = (selection: Selection) => {
+  const formatSelectionContext = (selection: Selection | null) => {
     if (!selection) return null;
     
     // Use optional chaining and nullish coalescing to safely access properties
@@ -493,7 +513,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const afterContext = selection.contextAfter ?? '';
     
     // Enhanced logging to help debug context issues
-    console.log('Rendering selection context:', {
+    console.log('%c📋 Rendering selection context (v1.0.1):', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;', {
       selectionTextLength: selection.text?.length || 0,
       beforeContextLength: beforeContext.length,
       afterContextLength: afterContext.length,
@@ -521,7 +541,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         }}>
           {beforeContext || 'No context before selection'}
         </div>
-        <SelectionHighlight>{selection.text}</SelectionHighlight>
+        <SelectionHighlight>{selection.text || ''}</SelectionHighlight>
         <div style={{ 
           marginTop: '8px', 
           fontSize: '0.95em', 
