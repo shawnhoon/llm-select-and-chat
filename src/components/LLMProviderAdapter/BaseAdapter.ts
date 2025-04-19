@@ -289,21 +289,36 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
       formattedText += `Context after selection: "${selection.contextAfter}"`;
     }
     
-    // Only add full document if it exists and differs from the combined context
-    // Increase character limit to take advantage of large context windows in modern LLMs
-    // Approximately 100K chars = 25K tokens which is well within the context limits
-    const MAX_DOCUMENT_CHARS = 100000;
-    if (selection.fullDocument && 
-        selection.fullDocument.length > 0 && 
-        (selection.fullDocument !== selection.contextBefore + selection.text + selection.contextAfter)) {
+    // Enhanced handling for full document text
+    // Increased character limit to take advantage of large context windows in modern LLMs
+    const MAX_DOCUMENT_CHARS = 100000; // ~25K tokens
+    
+    if (selection.fullDocument && selection.fullDocument.length > 0) {
+      // Log detailed info about the document
+      console.log('%c📄 FULL DOCUMENT DETAILS', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+      console.log('Document length:', selection.fullDocument.length, 'characters');
+      console.log('Selection in document:', selection.fullDocument.includes(selection.text));
       
-      // Log the document truncation if it happens
-      const isDocumentTruncated = selection.fullDocument.length > MAX_DOCUMENT_CHARS;
-      if (isDocumentTruncated) {
-        console.log(`📄 Document truncated from ${selection.fullDocument.length} to ${MAX_DOCUMENT_CHARS} characters`);
+      // Always include the full document if it's present, as it was explicitly provided
+      // This overrides the previous behavior of checking if it differs from combined context
+      const docToInclude = selection.fullDocument.substring(0, MAX_DOCUMENT_CHARS);
+      const isTruncated = selection.fullDocument.length > MAX_DOCUMENT_CHARS;
+      
+      // Log truncation info
+      if (isTruncated) {
+        console.log(`⚠️ Document truncated from ${selection.fullDocument.length} to ${MAX_DOCUMENT_CHARS} characters (${Math.round(MAX_DOCUMENT_CHARS/selection.fullDocument.length*100)}%)`);
       }
       
-      formattedText += `\n\nFull document: "${selection.fullDocument.substring(0, MAX_DOCUMENT_CHARS)}${selection.fullDocument.length > MAX_DOCUMENT_CHARS ? '...' : ''}"`;
+      // Include document with proper formatting
+      formattedText += `\n\nFull document: "${docToInclude}${isTruncated ? '...' : ''}"`;
+      
+      // Add additional context about document metadata if available
+      if (selection.location) {
+        formattedText += `\n\nDocument location: ${selection.location}`;
+      }
+      if (selection.url) {
+        formattedText += `\nDocument URL: ${selection.url}`;
+      }
     }
     
     // Log the formatted result

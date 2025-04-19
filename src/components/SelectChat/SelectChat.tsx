@@ -348,12 +348,28 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     console.log('Context before sample:', selectionCopy.contextBefore?.substring(0, 50) + '...');
     console.log('Context after sample:', selectionCopy.contextAfter?.substring(0, 50) + '...');
     
-    setSelection(selectionCopy);
-    
-    // Notify parent component if callback is provided
+    // Notify parent component if callback is provided and use the returned selection if available
+    let finalSelection = selectionCopy;
     if (onSelectionCapture) {
-      onSelectionCapture(selectionCopy);
+      try {
+        const enhancedSelection = onSelectionCapture(selectionCopy);
+        // If a selection object was returned (not undefined or void)
+        if (enhancedSelection && typeof enhancedSelection === 'object' && 'text' in enhancedSelection) {
+          console.log('%c SELECTION ENHANCED BY CALLBACK', 'background: #FF5722; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+          console.log('Enhanced selection has fullDocument:', !!enhancedSelection.fullDocument);
+          if (enhancedSelection.fullDocument) {
+            console.log('Enhanced fullDocument length:', enhancedSelection.fullDocument.length);
+            console.log('Enhanced fullDocument preview:', enhancedSelection.fullDocument.substring(0, 150) + '...');
+          }
+          finalSelection = enhancedSelection;
+        }
+      } catch (error) {
+        console.error('Error in onSelectionCapture callback:', error);
+      }
     }
+    
+    // Use the potentially enhanced selection
+    setSelection(finalSelection);
     
     // Only update the conversation's updatedAt timestamp
     const updatedConversation = {
@@ -453,6 +469,17 @@ export const SelectChat: React.FC<SelectChatProps> = ({
         
         // Use the adapter factory to get the appropriate adapter
         const adapter = LLMAdapterFactory.createAdapter(llmConfig);
+        
+        // Add extra debugging for selection being passed to LLM
+        console.log('%c📄 FINAL SELECTION BEING PASSED TO LLM ADAPTER', 'background: #673AB7; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+        console.log('Has selection:', !!selection);
+        if (selection) {
+          console.log('Has fullDocument:', !!selection.fullDocument);
+          if (selection.fullDocument) {
+            console.log('fullDocument length:', selection.fullDocument.length);
+            console.log('fullDocument preview:', selection.fullDocument.substring(0, 150) + '...');
+          }
+        }
         
         // Get response from LLM - pass the attachments via the messages
         const responseContent = await adapter.sendMessages(

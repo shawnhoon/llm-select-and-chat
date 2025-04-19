@@ -112,7 +112,7 @@ export interface SelectChatProps {
     };
   };
   extractFullDocument?: boolean;
-  onSelectionCapture?: (selection: Selection) => void;
+  onSelectionCapture?: (selection: Selection) => Selection | void;
   onConversationUpdate?: (conversation: Conversation) => void;
   onError?: (error: Error) => void;
 } 
