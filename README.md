@@ -70,6 +70,17 @@ The component supports pasting images directly from clipboard:
 
 When text is selected, the component captures context around the selection and makes it available to the AI assistant.
 
+By default, the component only captures the immediate context around the selection. If you need the AI to have access to the entire document, you can enable full document extraction:
+
+```jsx
+<SelectChat 
+  apiKey="your-openai-api-key"
+  extractFullDocument={true}
+/>
+```
+
+With full document extraction enabled, the complete text content of the page will be included with each selection, giving the AI assistant more comprehensive context.
+
 ## Documentation
 
 For complete documentation, including advanced usage and API reference, see [usage.md](./usage.md).

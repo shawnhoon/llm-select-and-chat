@@ -113,6 +113,7 @@ const isObject = (item: any): boolean => {
  * @param customTheme - Optional custom theme properties that override the default theme
  * @param userPreferences - Optional user preferences for UI customization
  * @param systemPromptConfig - Optional custom system prompt configuration
+ * @param extractFullDocument - Optional flag to extract full document context
  * @param onSelectionCapture - Optional callback when text is selected
  * @param onConversationUpdate - Optional callback when conversation is updated
  * @param onError - Optional callback when an error occurs
@@ -124,6 +125,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   customTheme,
   userPreferences: initialPreferences,
   systemPromptConfig,
+  extractFullDocument = false,
   onSelectionCapture,
   onConversationUpdate,
   onError
@@ -566,7 +568,10 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       <GlobalStyle theme={themeObject} />
       <EnhancedGlobalStyle theme={themeObject} />
       <SelectChatContainer className="select-chat-container">
-        <SelectionCaptureProvider onTextSelected={handleSelectionCapture}>
+        <SelectionCaptureProvider 
+          onTextSelected={handleSelectionCapture}
+          extractFullDocument={extractFullDocument}
+        >
           <ChatInterface
             conversation={conversation}
             userPreferences={preferences}

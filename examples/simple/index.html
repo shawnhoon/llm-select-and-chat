@@ -76,6 +76,19 @@
     .api-key-form button:hover {
       background-color: #3a80d2;
     }
+    
+    .options-form {
+      margin-bottom: 1rem;
+    }
+    
+    .options-form label {
+      margin-right: 1rem;
+      user-select: none;
+    }
+    
+    .options-form input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -90,6 +103,13 @@
       <div class="api-key-form">
         <input type="text" id="api-key" placeholder="Enter your OpenAI API key" />
         <button onclick="initChat()">Initialize Chat</button>
+      </div>
+      
+      <div class="options-form">
+        <label>
+          <input type="checkbox" id="extract-document" />
+          Extract full document (includes entire page text with each selection)
+        </label>
       </div>
       
       <p>
@@ -163,6 +183,7 @@ const chatInstance = LLMSelectAndChat.initSelectChat({
   <script>
     function initChat() {
       const apiKey = document.getElementById('api-key').value.trim();
+      const extractFullDocument = document.getElementById('extract-document').checked;
       
       if (!apiKey) {
         alert('Please enter your OpenAI API key');
@@ -174,12 +195,17 @@ const chatInstance = LLMSelectAndChat.initSelectChat({
         container: container,
         apiKey: apiKey,
         theme: 'light',
+        extractFullDocument: extractFullDocument,
         userPreferences: {
           showTimestamps: true,
           codeHighlighting: true
         },
         onSelectionCapture: (selection) => {
           console.log('Selection captured:', selection);
+          console.log('Full document included:', !!selection.fullDocument);
+          if (selection.fullDocument) {
+            console.log('Full document length:', selection.fullDocument.length);
+          }
         },
         onError: (error) => {
           console.error('Chat error:', error);

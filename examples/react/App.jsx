@@ -8,6 +8,7 @@ function App() {
   const [themeChoice, setThemeChoice] = useState('light');
   const [promptChoice, setPromptChoice] = useState('standard');
   const [searchEnabled, setSearchEnabled] = useState(false);
+  const [extractFullDocument, setExtractFullDocument] = useState(false);
   
   // Using imported system prompts instead of redefining them here
   
@@ -79,6 +80,10 @@ function App() {
 
   const handleSearchToggle = (e) => {
     setSearchEnabled(e.target.checked);
+  };
+
+  const handleExtractFullDocumentToggle = (e) => {
+    setExtractFullDocument(e.target.checked);
   };
 
   // Apply body class based on theme
@@ -202,6 +207,15 @@ function App() {
                   />
                   <label htmlFor="searchEnabled">Enable Search for External Verification</label>
                 </div>
+                <div className="prompt-option">
+                  <input
+                    type="checkbox"
+                    id="extractFullDocument"
+                    checked={extractFullDocument}
+                    onChange={handleExtractFullDocumentToggle}
+                  />
+                  <label htmlFor="extractFullDocument">Extract Full Document (includes entire page text)</label>
+                </div>
                 <div className="prompt-preview">
                   <small>Selected template: {promptChoice}</small>
                 </div>
@@ -255,6 +269,7 @@ function App() {
               theme={selectChatThemeProps.theme}
               customTheme={selectChatThemeProps.customTheme}
               systemPromptConfig={getCurrentSystemPrompt()}
+              extractFullDocument={extractFullDocument}
               userPreferences={{
                 saveApiKey: true,
                 autoEnableMic: false

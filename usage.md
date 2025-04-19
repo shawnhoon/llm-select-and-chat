@@ -40,7 +40,10 @@ function App() {
 | `apiKey` | `string` | `undefined` | API key for the LLM provider (OpenAI by default) |
 | `provider` | `LLMProvider` | OpenAI config | Configuration for the LLM provider |
 | `theme` | `'light' \| 'dark' \| 'system'` | `'system'` | UI theme |
+| `customTheme` | `ThemeProps` | `undefined` | Custom theme overrides |
 | `userPreferences` | `UserPreferences` | See below | User-specific settings |
+| `systemPromptConfig` | `string \| object` | Standard prompt | Custom system prompt |
+| `extractFullDocument` | `boolean` | `false` | Extract full document text for context |
 | `onSelectionCapture` | `(selection: Selection) => void` | `undefined` | Callback when text is selected |
 | `onConversationUpdate` | `(conversation: Conversation) => void` | `undefined` | Callback when conversation changes |
 | `onError` | `(error: Error) => void` | `undefined` | Callback for error handling |
@@ -193,8 +196,32 @@ interface Selection {
   contextAfter?: string;  // Text after the selection
   url?: string;           // URL where selection occurred
   location?: string;      // Additional location info
+  fullDocument?: string;  // The entire document text (if extractFullDocument is true)
 }
 ```
+
+### Full Document Extraction
+
+By default, the component only captures the text immediately surrounding the selection. For cases where you need the AI to have the full context of the entire page, enable full document extraction:
+
+```jsx
+<SelectChat
+  apiKey="your-api-key"
+  extractFullDocument={true}
+  onSelectionCapture={(selection) => {
+    // selection.fullDocument will contain the entire document text
+    console.log('Full document length:', selection.fullDocument?.length);
+  }}
+/>
+```
+
+This is particularly useful for:
+- Document analysis
+- PDF processing
+- Article summarization
+- Any task where global context is important
+
+Note that including the full document may increase token usage when communicating with the LLM.
 
 ## Image Support
 

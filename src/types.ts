@@ -111,6 +111,7 @@ export interface SelectChatProps {
       external?: boolean;
     };
   };
+  extractFullDocument?: boolean;
   onSelectionCapture?: (selection: Selection) => void;
   onConversationUpdate?: (conversation: Conversation) => void;
   onError?: (error: Error) => void;

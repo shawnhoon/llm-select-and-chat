@@ -10,6 +10,7 @@ import { initialize } from './init';
 export interface SelectChatInitOptions extends SelectChatProps {
   container: string | HTMLElement;
   systemPromptsPath?: string; // Path to custom system prompts JSON file
+  extractFullDocument?: boolean;
 }
 
 /**
@@ -75,6 +76,11 @@ export async function initSelectChat(options: SelectChatInitOptions): Promise<Se
       console.error('❌ Error loading system prompts:', error);
       console.warn('⚠️ Will use default system prompts instead. Check that your system-prompts.json file exists and is valid JSON.');
     }
+  }
+  
+  // Log whether full document extraction is enabled
+  if (options.extractFullDocument) {
+    console.log('📄 Full document extraction: ENABLED - This will capture the entire document text for context');
   }
   
   // Find the container element

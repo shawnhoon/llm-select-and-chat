@@ -4,11 +4,13 @@ import { Selection } from '../../types';
 interface UseSelectionCaptureProps {
   autoCapture: boolean;
   onTextSelected?: (selection: Selection) => void;
+  extractFullDocument?: boolean;
 }
 
 export const useSelectionCapture = ({ 
   autoCapture, 
-  onTextSelected 
+  onTextSelected,
+  extractFullDocument = false
 }: UseSelectionCaptureProps) => {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [lastMouseUpTarget, setLastMouseUpTarget] = useState<EventTarget | null>(null);
@@ -169,8 +171,12 @@ export const useSelectionCapture = ({
       contextBefore,
       contextAfter,
       url: window.location.href,
-      fullDocument: getDocumentText()
+      ...(extractFullDocument && { fullDocument: getDocumentText() })
     };
+
+    // Log whether we're extracting full document or not
+    console.log('Full document extraction:', extractFullDocument ? 'enabled' : 'disabled', 
+      extractFullDocument ? `(${newSelection.fullDocument?.length || 0} chars)` : '');
 
     // Set the selection and call the callback if provided
     setSelection(newSelection);
@@ -182,7 +188,7 @@ export const useSelectionCapture = ({
       console.log('Calling onTextSelected callback');
       onTextSelected(newSelection);
     }
-  }, [onTextSelected, shortcutTriggered, getDocumentContext, getDocumentText]);
+  }, [onTextSelected, shortcutTriggered, getDocumentContext, getDocumentText, extractFullDocument]);
 
   // Set up event listeners
   useEffect(() => {
