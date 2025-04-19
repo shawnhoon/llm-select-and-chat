@@ -115,4 +115,24 @@ export interface SelectChatProps {
   onSelectionCapture?: (selection: Selection) => Selection | void;
   onConversationUpdate?: (conversation: Conversation) => void;
   onError?: (error: Error) => void;
+  /**
+   * Callback that receives an API object with methods to control the component programmatically.
+   * @param api Object containing methods to control the SelectChat component.
+   */
+  onInit?: (api: {
+    setSelection: (selection: Selection) => void;
+    clearSelection: () => void;
+    focusInput: () => void;
+    isReady: () => boolean;
+  }) => void;
+  /**
+   * Callback that is triggered when the selection changes, either programmatically or through user interaction.
+   * @param selection The current selection object, or null if selection is cleared.
+   */
+  onSelectionChange?: (selection: Selection | null) => void;
+  /**
+   * Callback that is triggered when a new message is received or sent.
+   * @param message The message that was received or sent.
+   */
+  onMessage?: (message: Message) => void;
 } 

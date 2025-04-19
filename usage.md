@@ -10,6 +10,7 @@
 - [Image Support](#image-support)
 - [Vanilla JavaScript API](#vanilla-javascript-api)
 - [Advanced Examples](#advanced-examples)
+- [Programmatic Control API](#programmatic-control-api)
 
 ## Basic Usage
 
@@ -47,6 +48,8 @@ function App() {
 | `onSelectionCapture` | `(selection: Selection) => void` | `undefined` | Callback when text is selected |
 | `onConversationUpdate` | `(conversation: Conversation) => void` | `undefined` | Callback when conversation changes |
 | `onError` | `(error: Error) => void` | `undefined` | Callback for error handling |
+| `onInit` | `(api: { setSelection: (selection: Selection) => void; clearSelection: () => void; focusInput: () => void; isReady: () => boolean; }) => void` | `undefined` | Callback that provides access to the component's API for programmatic control |
+| `onSelectionChange` | `(selection: Selection \| null) => void` | `undefined` | Callback triggered when the selection changes, either programmatically or through user interaction |
 
 ### UserPreferences Options
 
@@ -362,3 +365,159 @@ function CustomChatImplementation() {
 ```
 
 This approach gives you complete control over the conversation state and AI service integration. 
+
+## Programmatic Control API
+
+The `SelectChat` component provides a programmatic API for controlling its behavior from parent components. This is particularly useful for integrating with PDF viewers or other document interfaces where you need to programmatically set selections.
+
+### Initializing the API
+
+To access the component's API, use the `onInit` callback prop:
+
+```jsx
+import React, { useState } from 'react';
+import { SelectChat } from 'llm-select-and-chat';
+
+function App() {
+  const [chatApi, setChatApi] = useState(null);
+  
+  return (
+    <div style={{ height: '600px', width: '400px' }}>
+      <SelectChat 
+        apiKey="your-openai-api-key"
+        onInit={(api) => {
+          setChatApi(api);
+          console.log('Chat API initialized and ready');
+        }}
+      />
+      
+      {/* Now you can use chatApi to control the component */}
+      <button 
+        disabled={!chatApi?.isReady()} 
+        onClick={() => chatApi.focusInput()}
+      >
+        Focus Chat Input
+      </button>
+    </div>
+  );
+}
+```
+
+### Available API Methods
+
+The API object provides the following methods:
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `setSelection` | `(selection: Selection) => void` | Programmatically set a selection in the chat |
+| `clearSelection` | `() => void` | Clear the current selection |
+| `focusInput` | `() => void` | Focus the chat input field |
+| `isReady` | `() => boolean` | Check if the component is initialized and ready |
+
+### Tracking Selection Changes
+
+Use the `onSelectionChange` callback to be notified when selections change, either programmatically or through user interaction:
+
+```jsx
+<SelectChat
+  apiKey="your-openai-api-key"
+  onInit={(api) => setChatApi(api)}
+  onSelectionChange={(selection) => {
+    // Called when selection changes (can be null if cleared)
+    console.log('Current selection:', selection);
+    
+    // Update UI or state based on selection
+    setHighlightedText(selection?.text || '');
+  }}
+/>
+```
+
+### PDF Viewer Integration Example
+
+Here's an example of integrating `SelectChat` with a PDF viewer component:
+
+```jsx
+import React, { useState, useEffect } from 'react';
+import { SelectChat } from 'llm-select-and-chat';
+import { PDFViewer } from 'your-pdf-library';
+
+function PDFChatApp() {
+  const [chatApi, setChatApi] = useState(null);
+  const [pdfDocument, setPdfDocument] = useState(null);
+  
+  const handleDocumentLoad = (document) => {
+    setPdfDocument(document);
+  };
+  
+  const handleTextSelection = (selection) => {
+    if (chatApi?.isReady()) {
+      // Convert PDF selection to SelectChat Selection format
+      const chatSelection = {
+        text: selection.text,
+        contextBefore: selection.paragraphBefore || '',
+        contextAfter: selection.paragraphAfter || '',
+        url: window.location.href,
+        location: `page ${selection.pageNumber}`
+      };
+      
+      // Set the selection in the chat component
+      chatApi.setSelection(chatSelection);
+    }
+  };
+  
+  return (
+    <div className="pdf-chat-container">
+      <div className="pdf-viewer">
+        <PDFViewer
+          url="/path/to/document.pdf"
+          onDocumentLoad={handleDocumentLoad}
+          onTextSelection={handleTextSelection}
+        />
+      </div>
+      
+      <div className="chat-panel">
+        <SelectChat
+          apiKey="your-openai-api-key"
+          onInit={(api) => setChatApi(api)}
+          onSelectionChange={(selection) => {
+            // Optionally highlight the selection in the PDF viewer
+            if (selection && pdfDocument) {
+              pdfDocument.highlightText(selection.text);
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### Best Practices
+
+When using the programmatic API, consider these best practices:
+
+1. **Check component readiness**: Always verify the component is ready using `isReady()` before calling other methods
+   
+2. **Provide complete context**: When setting selections programmatically, include as much context as possible (text before/after) for better AI responses
+   
+3. **Handle errors gracefully**: Use the `onError` callback along with the API to handle error scenarios
+   
+4. **Focus management**: Use `focusInput()` after setting a selection to provide a seamless user experience
+   
+5. **Selection format consistency**: Ensure programmatically set selections follow the same format as user-made selections:
+
+```typescript
+// Complete Selection object format
+{
+  text: string;           // The selected text (required)
+  contextBefore?: string; // Text before the selection
+  contextAfter?: string;  // Text after the selection
+  url?: string;           // URL or identifier for the source
+  location?: string;      // Human-readable location (e.g., "page 5")
+  fullDocument?: string;  // Full document text if available
+}
+```
+
+6. **Memory management**: The API object will be invalidated on component unmount. Always check `isReady()` before using the API, especially after component re-renders.
+
+7. **Two-way communication**: Use both the API methods and the callbacks (`onSelectionChange`, `onConversationUpdate`) to create bidirectional communication between your app and the chat component. 

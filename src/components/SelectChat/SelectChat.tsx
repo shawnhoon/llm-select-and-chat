@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 // Version: 1.0.1 - Context Preservation Fix (2024-05-29)
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { SelectChatProps, Conversation, Selection, UserPreferences, Message, LLMProvider, Attachment } from '../../types';
@@ -117,6 +117,8 @@ const isObject = (item: any): boolean => {
  * @param onSelectionCapture - Optional callback when text is selected
  * @param onConversationUpdate - Optional callback when conversation is updated
  * @param onError - Optional callback when an error occurs
+ * @param onInit - Optional callback when the component is initialized
+ * @param onSelectionChange - Optional callback when the selection changes
  */
 export const SelectChat: React.FC<SelectChatProps> = ({
   apiKey,
@@ -128,7 +130,9 @@ export const SelectChat: React.FC<SelectChatProps> = ({
   extractFullDocument = false,
   onSelectionCapture,
   onConversationUpdate,
-  onError
+  onError,
+  onInit,
+  onSelectionChange
 }) => {
   // State management
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(
@@ -136,6 +140,12 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       : (theme as 'light' | 'dark')
   );
+  
+  // Input reference for focusing
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Track component readiness state
+  const [isReady, setIsReady] = useState(false);
   
   // Use default system prompt if not provided
   const effectiveSystemPrompt = systemPromptConfig || getSystemPrompt('standard', false);
@@ -309,6 +319,37 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       console.error('Error updating provider with new API key:', error);
     }
   }, [apiKey, currentProvider, systemPromptConfig]);
+  
+  // Expose API via onInit
+  useEffect(() => {
+    if (onInit) {
+      onInit({
+        setSelection: (newSelection: Selection) => {
+          console.log('Selection set programmatically:', newSelection);
+          setSelection(newSelection);
+          setTimeout(() => inputRef.current?.focus(), 100);
+        },
+        clearSelection: () => setSelection(null),
+        focusInput: () => inputRef.current?.focus(),
+        isReady: () => isReady
+      });
+    }
+    
+    // Mark component as ready
+    setIsReady(true);
+    
+    return () => {
+      // Clean up on unmount
+      setIsReady(false);
+    };
+  }, [onInit]);
+  
+  // Notify about selection changes
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selection);
+    }
+  }, [selection, onSelectionChange]);
   
   // Handle selection capture from the SelectionCaptureProvider
   const handleSelectionCapture = (newSelection: Selection) => {
@@ -608,6 +649,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
             onNewConversation={handleNewConversation}
             onError={onError}
             onProviderChange={handleProviderChange}
+            inputRef={inputRef}
           />
         </SelectionCaptureProvider>
       </SelectChatContainer>

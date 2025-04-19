@@ -1,0 +1,150 @@
+# Product Requirements Document: SelectChat Component API
+
+## Overview
+Implement a robust external API for the SelectChat component to facilitate integration with PDF viewers and other components. The API will provide programmatic control over selections and component state without relying on global window objects.
+
+## Business Goal
+Enable seamless integration between the SelectChat component and external components like PDF viewers, allowing users to select text from documents and immediately chat about it within a unified experience.
+
+## Key Requirements
+
+### 1. Component API Implementation
+- Create an `onInit` callback prop that exposes component methods to parent components
+- Provide the following methods:
+  - `setSelection`: Allow external components to set the selection programmatically
+  - `clearSelection`: Clear the current selection
+  - `focusInput`: Focus the input field for user convenience
+  - `isReady`: Return the initialization status of the component
+
+### 2. Selection Change Notifications
+- Add an `onSelectionChange` callback to notify parent components when selections change
+- This facilitates two-way communication between SelectChat and integrating components
+
+### 3. Input Reference Management
+- Create a ref for the input element
+- Pass the input ref to the ChatInterface component
+- Update the ChatInterface prop types to accept the ref
+
+### 4. Technical Implementation Plan
+1. Add new props to the SelectChatProps interface
+2. Implement state tracking for component readiness
+3. Create the input ref and pass it to ChatInterface
+4. Set up the useEffect hook to expose the API via onInit
+5. Implement the onSelectionChange callback effect
+
+## Implementation Details
+
+```typescript
+// 1. Update SelectChatProps interface
+interface SelectChatProps {
+  // existing props...
+  onInit?: (api: {
+    setSelection: (selection: Selection) => void;
+    clearSelection: () => void;
+    focusInput: () => void;
+    isReady: () => boolean;
+  }) => void;
+  onSelectionChange?: (selection: Selection | null) => void;
+}
+
+// 2. Add new state and ref
+const inputRef = useRef<HTMLTextAreaElement>(null);
+const [isReady, setIsReady] = useState(false);
+
+// 3. Implement the API exposure
+useEffect(() => {
+  if (onInit) {
+    onInit({
+      setSelection: (newSelection: Selection) => {
+        console.log('Selection set programmatically:', newSelection);
+        setSelection(newSelection);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      },
+      clearSelection: () => setSelection(null),
+      focusInput: () => inputRef.current?.focus(),
+      isReady: () => isReady
+    });
+  }
+  
+  // Mark component as ready
+  setIsReady(true);
+  
+  return () => {
+    // Clean up on unmount
+    setIsReady(false);
+  };
+}, [onInit]);
+
+// 4. Add selection change notification
+useEffect(() => {
+  if (onSelectionChange) {
+    onSelectionChange(selection);
+  }
+}, [selection, onSelectionChange]);
+
+// 5. Pass input ref to ChatInterface
+<ChatInterface
+  // existing props...
+  inputRef={inputRef}
+/>
+```
+
+## Testing Scenarios
+
+1. **Basic API Initialization**
+   - Verify the `onInit` callback is triggered when the component mounts
+   - Confirm all API methods are available in the parent component
+
+2. **Programmatic Selection Setting**
+   - Test setting a selection programmatically from a parent component
+   - Verify the selection appears correctly in the UI
+   - Check that the input is focused after setting the selection
+
+3. **Input Focus Control**
+   - Verify the input field can be focused programmatically 
+
+4. **Selection Change Notification**
+   - Test that parent components receive notifications when the selection changes
+   - Verify both user-made and programmatic selections trigger the callback
+
+5. **Integration Testing with Mock PDF Viewer**
+   - Create a simple mock PDF viewer component that uses the SelectChat API
+   - Test the end-to-end flow of selecting text in the PDF and having it appear in the chat
+
+## Implementation Notes
+- The ChatInterface component already has an inputRef defined, which should be reused
+- The SelectionCaptureProvider already handles user selections, which should remain unchanged
+- No extra visual feedback is needed for programmatic selections (as requested)
+
+## Integration Example
+
+```jsx
+// Example usage in a parent component
+const [selectChatApi, setSelectChatApi] = useState(null);
+
+// In JSX
+<SelectChat
+  // other props...
+  onInit={(api) => {
+    setSelectChatApi(api);
+    console.log("SelectChat API initialized");
+  }}
+  onSelectionChange={(selection) => {
+    console.log("Selection changed:", selection);
+  }}
+/>
+
+// Later when a PDF highlight is clicked
+const handleHighlightClick = (highlight) => {
+  if (selectChatApi) {
+    const selection = {
+      text: highlight.text,
+      contextBefore: highlight.contextBefore,
+      contextAfter: highlight.contextAfter,
+      url: document.location.href,
+      location: 'pdf'
+    };
+    selectChatApi.setSelection(selection);
+  }
+};
+``` 

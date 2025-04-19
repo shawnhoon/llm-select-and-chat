@@ -69,3 +69,10 @@ scripts/task-complexity-report.json
 .yarn-integrity
 
 .cursor
+
+# Added by Claude Task Master
+.idea
+.vscode
+# Task files
+tasks.json
+tasks/ 

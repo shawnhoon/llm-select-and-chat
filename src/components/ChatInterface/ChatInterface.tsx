@@ -15,6 +15,7 @@ interface ChatInterfaceProps {
   onNewConversation: () => void;
   onError?: (error: Error) => void;
   onProviderChange?: (provider: LLMProvider) => void;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
 // Styled Components
@@ -299,13 +300,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   onNewConversation,
   onError,
-  onProviderChange
+  onProviderChange,
+  inputRef
 }) => {
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
   const [apiKeys, setApiKeys] = useState<{
     openai?: string;
@@ -319,7 +320,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   // Adjust input height based on content
   const adjustInputHeight = () => {
-    const textarea = inputRef.current;
+    const textarea = inputRef?.current;
     if (!textarea) return;
     
     // Reset height to get the correct scrollHeight
@@ -407,7 +408,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setInputValue('');
       setAttachments([]);
       // Reset input height after sending
-      if (inputRef.current) {
+      if (inputRef?.current) {
         inputRef.current.style.height = '48px';
       }
     } catch (error) {
@@ -478,7 +479,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       e.preventDefault();
       
       // Show a brief visual feedback that image was added
-      if (inputRef.current) {
+      if (inputRef?.current) {
         const originalBorder = inputRef.current.style.border;
         inputRef.current.style.border = '2px solid #4ade80'; // success color
         setTimeout(() => {
@@ -572,7 +573,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setInputValue(contextQuery);
       
       // Focus the input field
-      inputRef.current?.focus();
+      inputRef?.current?.focus();
     }
   };
   
