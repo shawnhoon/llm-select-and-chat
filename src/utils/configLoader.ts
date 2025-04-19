@@ -141,28 +141,55 @@ export function loadSystemPrompt(name: string): SystemPromptConfig {
 }
 
 /**
- * Enhance an LLM provider with system prompt configuration
- * @param provider The provider to enhance
- * @param promptConfig System prompt configuration to apply
- * @returns Enhanced provider with system prompt
+ * Enhance a provider configuration with a system prompt
+ * @param provider LLM provider configuration
+ * @param promptConfig System prompt configuration or name
+ * @returns Enhanced provider configuration with system prompt
  */
 export function enhanceProviderWithSystemPrompt(
   provider: LLMProvider, 
   promptConfig: SystemPromptConfig | string
 ): LLMProvider {
-  // If promptConfig is a string, load the named configuration
-  const config = typeof promptConfig === 'string' 
-    ? loadSystemPrompt(promptConfig) 
-    : promptConfig;
+  // If no provider, return as is
+  if (!provider) return provider;
   
-  return {
-    ...provider,
-    systemPrompt: {
-      template: config.template,
-      useSearch: config.useSearch,
-      contextLevels: config.contextLevels
+  try {
+    // Get system prompt configuration from name or use as is
+    const systemPromptConfig = typeof promptConfig === 'string' 
+      ? loadSystemPrompt(promptConfig)
+      : promptConfig;
+    
+    if (!systemPromptConfig) {
+      console.warn('⚠️ Could not load system prompt config. Using provider without system prompt.');
+      return provider;
     }
-  };
+    
+    if (!systemPromptConfig.template) {
+      console.warn('⚠️ System prompt missing template. Using provider without system prompt.');
+      return provider;
+    }
+    
+    // Create a new provider with the system prompt
+    const enhancedProvider: LLMProvider = {
+      ...provider,
+      systemPrompt: {
+        template: systemPromptConfig.template,
+        useSearch: systemPromptConfig.useSearch || false,
+        contextLevels: systemPromptConfig.contextLevels || {}
+      }
+    };
+    
+    // Log successful enhancement for debugging
+    console.log('✅ Enhanced provider with system prompt template:', 
+      typeof promptConfig === 'string' ? promptConfig : 'custom template',
+      'Search enabled:', systemPromptConfig.useSearch ? 'Yes' : 'No');
+    
+    return enhancedProvider;
+  } catch (error) {
+    console.error('❌ Error enhancing provider with system prompt:', error);
+    console.warn('⚠️ Using provider without system prompt due to error.');
+    return provider;
+  }
 }
 
 /**

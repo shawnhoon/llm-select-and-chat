@@ -46,9 +46,35 @@ export interface SelectChatInstance {
  * Initialize the SelectChat component in a vanilla JS environment
  */
 export async function initSelectChat(options: SelectChatInitOptions): Promise<SelectChatInstance> {
+  console.log('🚀 Initializing LLM Select and Chat...');
+  
   // Initialize system prompts if path provided
   if (options.systemPromptsPath) {
-    await initialize({ systemPromptsPath: options.systemPromptsPath });
+    try {
+      console.log(`📚 Loading system prompts from: ${options.systemPromptsPath}`);
+      await initialize({ systemPromptsPath: options.systemPromptsPath });
+      
+      // Add enhanced debugging for system prompts loading
+      // This helps users verify their prompts are correctly loaded
+      console.log('✅ System prompts initialized successfully. Attempting to verify...');
+      
+      // Attempt to get a system prompt to validate loading
+      const { getSystemPrompt } = await import('./config/systemPrompts');
+      const standardPrompt = getSystemPrompt('standard', false);
+      
+      if (standardPrompt?.template) {
+        // Only show a brief snippet of the template to avoid console clutter
+        const templatePreview = standardPrompt.template.substring(0, 50) + '...';
+        console.log('✅ System prompts verification successful!');
+        console.log(`📝 Sample template loaded: ${templatePreview}`);
+      } else {
+        console.warn('⚠️ System prompts loaded but verification failed. Custom prompts may not be applied correctly.');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error loading system prompts:', error);
+      console.warn('⚠️ Will use default system prompts instead. Check that your system-prompts.json file exists and is valid JSON.');
+    }
   }
   
   // Find the container element

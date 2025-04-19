@@ -255,57 +255,62 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     console.log('Theme colors:', themeObject.colors);
   }, [themeMode, customTheme]);
   
-  // Handle changing the LLM provider
-  const handleProviderChange = (newProvider: LLMProvider) => {
-    // Log provider change with better formatting
-    console.log('%c🔄 CHANGING LLM PROVIDER', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 14px;');
-    
-    // Apply system prompt config to the new provider if available
-    const enhancedProvider = systemPromptConfig
-      ? enhanceProviderWithSystemPrompt(newProvider, systemPromptConfig)
-      : newProvider;
-    
-    if (apiKey && !currentProvider) {
-      console.log('%cSwitching from default OpenAI to custom provider', 'font-weight: bold;');
-    } else if (currentProvider) {
-      console.log('%cFrom:', 'font-weight: bold;', `${currentProvider.type} / ${currentProvider.defaultParams.model} (temp: ${currentProvider.defaultParams.temperature || 'default'})`);
-    }
-    
-    console.log('%cTo:', 'font-weight: bold;', `${enhancedProvider.type} / ${enhancedProvider.defaultParams.model} (temp: ${enhancedProvider.defaultParams.temperature || 'default'})`);
-    
-    // Save API key to localStorage
+  // Create initial LLM provider
+  useEffect(() => {
     try {
-      // Get existing keys or initialize empty object
-      const savedKeys = localStorage.getItem('llm-select-chat-api-keys');
-      const allKeys = savedKeys ? JSON.parse(savedKeys) : {};
+      // Always use a defined system prompt - either the one provided or the standard default
+      const effectiveSystemPrompt = systemPromptConfig || getSystemPrompt('standard', false);
       
-      // Update with new key
-      allKeys[enhancedProvider.type] = enhancedProvider.apiKey;
+      // Always enhance the provider with the system prompt
+      const enhancedProvider = initialProvider 
+        ? enhanceProviderWithSystemPrompt(initialProvider, effectiveSystemPrompt)
+        : undefined; // Use undefined instead of null to match state type
+        
+      setCurrentProvider(enhancedProvider);
       
-      // Save back to localStorage
-      localStorage.setItem('llm-select-chat-api-keys', JSON.stringify(allKeys));
-      console.log('Saved API key for', enhancedProvider.type, 'to localStorage');
+      // Log for debugging
+      console.log('🧠 Provider initialized with system prompt:', 
+        effectiveSystemPrompt, 
+        enhancedProvider?.systemPrompt?.template ? 'Template applied successfully' : 'Using default template');
+        
     } catch (error) {
-      console.error('Error saving API key to localStorage:', error);
+      console.error('Error initializing provider:', error);
     }
+  }, [initialProvider, systemPromptConfig]);
+  
+  // Update provider when API key changes
+  useEffect(() => {
+    if (!currentProvider || apiKey === currentProvider.apiKey) return;
     
-    // Notify parent component if callback exists
-    if (onConversationUpdate) {
-      // Update conversation with new timestamp to trigger refresh
-      const updatedConversation = {
-        ...conversation,
-        updatedAt: Date.now()
+    try {
+      // Get the current system prompt config from the existing provider or use the default
+      const currentSystemPrompt = systemPromptConfig || 
+        (currentProvider.systemPrompt || getSystemPrompt('standard', false));
+      
+      // Create a new provider with the updated API key
+      // Ensure apiKey is not undefined
+      if (!apiKey) return;
+      
+      const newProvider = {
+        ...currentProvider,
+        apiKey: apiKey // Ensure apiKey is a string
       };
-      onConversationUpdate(updatedConversation);
+      
+      // Always reapply the system prompt when creating a new provider
+      const enhancedProvider = enhanceProviderWithSystemPrompt(newProvider, currentSystemPrompt);
+      setCurrentProvider(enhancedProvider);
+      
+      // Log for debugging
+      console.log('🔑 Provider updated with new API key and system prompt reapplied');
+      
+    } catch (error) {
+      console.error('Error updating provider with new API key:', error);
     }
-    
-    // Update current provider with the enhanced provider
-    setCurrentProvider(enhancedProvider);
-  };
+  }, [apiKey, currentProvider, systemPromptConfig]);
   
   // Handle selection capture from the SelectionCaptureProvider
   const handleSelectionCapture = (newSelection: Selection) => {
-    console.log('%c�� SELECTION CAPTURED - v1.0.1', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('%c SELECTION CAPTURED - v1.0.1', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
     console.log('Selection text:', newSelection.text?.substring(0, 100) + (newSelection.text?.length > 100 ? '...' : ''));
     console.log('Context before length:', newSelection.contextBefore?.length || 0);
     console.log('Context after length:', newSelection.contextAfter?.length || 0);
@@ -504,6 +509,55 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     if (onConversationUpdate) {
       onConversationUpdate(newConversation);
     }
+  };
+
+  // Handle changing the LLM provider
+  const handleProviderChange = (newProvider: LLMProvider) => {
+    // Log provider change with better formatting
+    console.log('%c🔄 CHANGING LLM PROVIDER', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 14px;');
+    
+    // Get the current system prompt config
+    const currentSystemPrompt = systemPromptConfig || 
+      (currentProvider?.systemPrompt || getSystemPrompt('standard', false));
+    
+    // Apply system prompt config to the new provider
+    const enhancedProvider = enhanceProviderWithSystemPrompt(newProvider, currentSystemPrompt);
+    
+    if (currentProvider) {
+      console.log('%cFrom:', 'font-weight: bold;', `${currentProvider.type} / ${currentProvider.defaultParams.model} (temp: ${currentProvider.defaultParams.temperature || 'default'})`);
+    }
+    
+    console.log('%cTo:', 'font-weight: bold;', `${enhancedProvider.type} / ${enhancedProvider.defaultParams.model} (temp: ${enhancedProvider.defaultParams.temperature || 'default'})`);
+    console.log('System prompt template applied:', enhancedProvider.systemPrompt?.template ? 'Yes' : 'No');
+    
+    // Save API key to localStorage
+    try {
+      // Get existing keys or initialize empty object
+      const savedKeys = localStorage.getItem('llm-select-chat-api-keys');
+      const allKeys = savedKeys ? JSON.parse(savedKeys) : {};
+      
+      // Update with new key
+      allKeys[enhancedProvider.type] = enhancedProvider.apiKey;
+      
+      // Save back to localStorage
+      localStorage.setItem('llm-select-chat-api-keys', JSON.stringify(allKeys));
+      console.log('Saved API key for', enhancedProvider.type, 'to localStorage');
+    } catch (error) {
+      console.error('Error saving API key to localStorage:', error);
+    }
+    
+    // Notify parent component if callback exists
+    if (onConversationUpdate) {
+      // Update conversation with new timestamp to trigger refresh
+      const updatedConversation = {
+        ...conversation,
+        updatedAt: Date.now()
+      };
+      onConversationUpdate(updatedConversation);
+    }
+    
+    // Update current provider with the enhanced provider
+    setCurrentProvider(enhancedProvider);
   };
 
   return (
