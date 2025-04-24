@@ -291,6 +291,49 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
             </ReactMarkdown>
           </div>
         )}
+        
+        {/* Render images in selection context */}
+        {selection.attachments && selection.attachments.length > 0 && (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{ 
+              fontSize: '0.85em', 
+              marginBottom: '8px', 
+              fontWeight: 500, 
+              color: '#64748b'
+            }}>
+              Images from selection:
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '8px'
+            }}>
+              {selection.attachments.map(attachment => (
+                attachment.type === 'image' && attachment.url && (
+                  <div key={attachment.id} style={{ 
+                    width: '80px', 
+                    height: '80px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(0,0,0,0.1)'
+                  }}>
+                    <img 
+                      src={attachment.url} 
+                      alt={attachment.name || 'Selected image'} 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => window.open(attachment.url, '_blank')}
+                    />
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
       </>
     );
   };

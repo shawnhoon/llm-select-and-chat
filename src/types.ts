@@ -31,6 +31,7 @@ export interface Selection {
   url?: string;
   location?: string;
   fullDocument?: string;
+  attachments?: Attachment[]; // Allow image attachments within selections
 }
 
 export interface Attachment {

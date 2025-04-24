@@ -598,6 +598,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       hasAfterContext: afterContext.length > 0,
       beforeContextSample: beforeContext ? beforeContext.substring(0, Math.min(50, beforeContext.length)) + (beforeContext.length > 50 ? '...' : '') : '',
       afterContextSample: afterContext ? afterContext.substring(0, Math.min(50, afterContext.length)) + (afterContext.length > 50 ? '...' : '') : '',
+      hasAttachments: !!selection.attachments?.length,
+      attachmentsCount: selection.attachments?.length || 0,
       selectionKeys: Object.keys(selection).join(', ')
     });
     
@@ -640,6 +642,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             'No context after selection'
           )}
         </div>
+        
+        {/* Render images if selection has attachments */}
+        {selection.attachments && selection.attachments.length > 0 && (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '0.85em', marginBottom: '8px', fontWeight: 500 }}>
+              Selected Images ({selection.attachments.length}):
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {selection.attachments.map(attachment => (
+                attachment.type === 'image' && attachment.url && (
+                  <div key={attachment.id} style={{ 
+                    width: '100px', 
+                    height: '100px',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <img 
+                      src={attachment.url} 
+                      alt={attachment.name || 'Selected image'} 
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover'
+                      }}
+                      onClick={() => window.open(attachment.url, '_blank')}
+                    />
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
       </>
     );
   };
