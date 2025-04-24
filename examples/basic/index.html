@@ -154,7 +154,13 @@ const selectChat = new SelectChat({
     </div>
   </main>
   
-  <script src="../../dist/index.umd.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/styled-components/dist/styled-components.min.js"></script>
+  <!-- Add react-markdown and remark-gfm CDN links -->
+  <script crossorigin src="https://unpkg.com/react-markdown@8.0.7/dist/react-markdown.min.js"></script>
+  <script crossorigin src="https://unpkg.com/remark-gfm@3.0.1/index.js"></script>
+  <script src="/dist/index.umd.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const chatContainer = document.getElementById('chat-container');

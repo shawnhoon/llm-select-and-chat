@@ -44,7 +44,7 @@ const baseConfig = {
       'process.env.NODE_ENV': JSON.stringify('production')
     }),
   ],
-  external: ['react', 'react-dom', 'styled-components', 'react/jsx-runtime'],
+  external: ['react', 'react-dom', 'styled-components', 'react/jsx-runtime', 'react-markdown', 'remark-gfm'],
   onwarn(warning, warn) {
     // Skip certain warnings
     if (
@@ -145,6 +145,8 @@ export default [
         'react-dom/client': 'ReactDOM',
         'styled-components': 'styled',
         'react/jsx-runtime': 'jsxRuntime',
+        'react-markdown': 'ReactMarkdown',
+        'remark-gfm': 'remarkGfm'
       },
       exports: 'named',
     },
@@ -165,6 +167,8 @@ export default [
         'react-dom/client': 'ReactDOM',
         'styled-components': 'styled',
         'react/jsx-runtime': 'jsxRuntime',
+        'react-markdown': 'ReactMarkdown',
+        'remark-gfm': 'remarkGfm'
       },
     },
   },

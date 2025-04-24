@@ -1,6 +1,10 @@
-import { Selection, Attachment, Message, LLMRequestParams, SystemPromptParams, ProviderConfig } from '../../types';
-import { optimizeImageAttachment } from '../../utils/imageUtils';
+import { Selection, Attachment, Message, LLMProvider } from '../../types';
+// import { optimizeImageAttachment } from '../../utils/imageUtils'; // Commented out: File not found
 import { AttachmentWithMime } from '../../types/attachment';
+
+// Define types based on LLMProvider structure
+type LLMRequestParams = LLMProvider['defaultParams'];
+type SystemPromptParams = LLMProvider['systemPrompt'];
 
 /**
  * Base interface for all LLM adapters
@@ -9,7 +13,7 @@ export interface BaseLLMAdapter {
   /**
    * Provider configuration
    */
-  provider: ProviderConfig;
+  provider: LLMProvider; // Use LLMProvider type
 
   /**
    * Format a selection with context for the LLM
@@ -41,11 +45,11 @@ export interface BaseLLMAdapter {
  * Implements common functionality shared across all LLM adapters
  */
 export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
-  provider: ProviderConfig;
+  provider: LLMProvider; // Use LLMProvider type
   maxRetries = 3;
   retryDelay = 1000;
 
-  constructor(provider: ProviderConfig) {
+  constructor(provider: LLMProvider) { // Use LLMProvider type
     this.provider = provider;
   }
   
@@ -61,18 +65,23 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     const processedAttachments = await Promise.all(
       attachmentsToProcess.map(async attachment => {
         if (attachment.type === 'image') {
-          try {
-            const optimizedImage = await optimizeImageAttachment(attachment);
-            return optimizedImage;
-          } catch (error) {
-            console.error('Error optimizing image:', error);
-            return null;
-          }
+          // try {
+          //   // const optimizedImage = await optimizeImageAttachment(attachment); // Commented out: Missing import
+          //   // return optimizedImage;
+          // } catch (error) {
+          //   console.error('Error optimizing image:', error);
+          //   return null;
+          // }
+          // For now, return the image attachment as is without optimization
+          return {
+            ...attachment,
+            mimeType: attachment.mimeType || 'image/jpeg' // Provide a default mime type if missing
+          } as AttachmentWithMime;
         } else {
           return {
             ...attachment,
             mimeType: attachment.mimeType || 'application/octet-stream'
-          };
+          } as AttachmentWithMime;
         }
       })
     );
@@ -113,9 +122,9 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
    */
   protected generateSystemMessage(
     selection?: Selection | null,
-    params?: SystemPromptParams
+    params?: { systemPrompt?: string } // Adjusted type for params
   ): string {
-    let systemMessage = this.provider.defaultSystemPrompt || '';
+    let systemMessage = this.provider.systemPrompt?.template || ''; // Use provider.systemPrompt.template
     
     if (params?.systemPrompt) {
       systemMessage = params.systemPrompt;
@@ -170,7 +179,7 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
   abstract sendMessages(
     messages: Message[],
     selection?: Selection | null,
-    params?: LLMRequestParams
+    params?: LLMRequestParams // Use the defined type alias
   ): Promise<string>;
 
   /**
@@ -181,6 +190,6 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     messages: Message[],
     schema: Record<string, unknown>,
     selection?: Selection | null,
-    params?: LLMRequestParams
+    params?: LLMRequestParams // Use the defined type alias
   ): Promise<T>;
 } 

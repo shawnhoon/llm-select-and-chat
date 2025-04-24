@@ -15,13 +15,37 @@ const config = {
   public: path.resolve(__dirname, '..'),
   cleanUrls: false,
   directoryListing: true,
+  cors: true, // Enable CORS
+  headers: [
+    {
+      source: '**/*',
+      headers: [
+        { key: 'Access-Control-Allow-Origin', value: '*' },
+        { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+        { key: 'Access-Control-Allow-Headers', value: 'Origin, X-Requested-With, Content-Type, Accept, Range' }
+      ]
+    }
+  ],
   rewrites: [
     { source: '/examples', destination: '/examples/index.html' }
-  ]
+  ],
+  trailingSlash: true
 };
 
 const server = http.createServer((request, response) => {
   console.log(`${new Date().toISOString()} - ${request.method} ${request.url}`);
+  
+  // Add CORS headers for all requests
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Range');
+  
+  // Handle OPTIONS requests for CORS preflight
+  if (request.method === 'OPTIONS') {
+    response.statusCode = 204;
+    response.end();
+    return;
+  }
   
   return handler(request, response, config)
     .catch(err => {

@@ -1,6 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, CSSProperties } from 'react';
 // Version: 1.0.1 - Context Preservation Fix (2024-05-29)
 import styled from 'styled-components';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Message as MessageType, Conversation, UserPreferences, LLMProvider, Selection, Attachment } from '../../types';
 import { Message } from './Message';
 import { ProviderSelector } from './ProviderSelector';
@@ -320,6 +322,33 @@ const ClearSelectionButton = styled.button`
   }
 `;
 
+// Styled components for markdown rendering
+const MarkdownImage = styled.img`
+  max-width: 100%;
+  border-radius: ${props => props.theme.borderRadius.small};
+  margin: 8px 0;
+  border: 1px solid ${props => props.theme.colors.border};
+`;
+
+const MarkdownPre = styled.pre`
+  background-color: ${props => props.theme.colors.backgroundLight};
+  padding: 0.75em;
+  border-radius: 6px;
+  margin: 0.5em 0;
+  overflow-x: auto;
+  color: ${props => props.theme.colors.text};
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+`;
+
+const MarkdownCode = styled.code`
+  background-color: ${props => props.theme.colors.backgroundLight};
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+`;
+
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   conversation,
   userPreferences,
@@ -538,6 +567,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
   };
   
+  // Custom markdown components
+  const markdownComponents = {
+    img: ({ node, ...props }: any) => (
+      <MarkdownImage {...props} alt={props.alt || 'Image'} />
+    ),
+    pre: ({ node, children, ...props }: any) => (
+      <MarkdownPre {...props}>{children}</MarkdownPre>
+    ),
+    code: ({ node, inline, children, ...props }: any) => {
+      return inline ? 
+        <MarkdownCode {...props}>{children}</MarkdownCode> : 
+        <span {...props}>{children}</span>;
+    }
+  };
+  
   const formatSelectionContext = (selection: Selection | null) => {
     if (!selection) return null;
     
@@ -557,38 +601,44 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       selectionKeys: Object.keys(selection).join(', ')
     });
     
+    const contextStyle: CSSProperties = {
+      marginBottom: '8px',
+      fontSize: '0.95em',
+      opacity: 0.85,
+      color: '#64748b', // Slate-500 for context, regardless of theme
+      whiteSpace: 'pre-wrap', // Preserve line breaks
+      maxHeight: '150px',
+      overflowY: 'auto',
+      border: beforeContext ? 'none' : '1px dashed #cbd5e1',
+      padding: beforeContext ? '0' : '4px',
+      borderRadius: '4px',
+      minHeight: beforeContext ? '0' : '20px'
+    };
+    
     return (
       <>
-        <div style={{ 
-          marginBottom: '8px', 
-          fontSize: '0.95em', 
-          opacity: 0.85,
-          color: '#64748b', // Slate-500 for context, regardless of theme
-          whiteSpace: 'pre-wrap', // Preserve line breaks
-          maxHeight: '150px',
-          overflowY: 'auto',
-          border: beforeContext ? 'none' : '1px dashed #cbd5e1',
-          padding: beforeContext ? '0' : '4px',
-          borderRadius: '4px',
-          minHeight: beforeContext ? '0' : '20px'
-        }}>
-          {beforeContext || 'No context before selection'}
+        <div style={contextStyle}>
+          {beforeContext ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {beforeContext}
+            </ReactMarkdown>
+          ) : (
+            'No context before selection'
+          )}
         </div>
-        <SelectionHighlight>{selection.text || ''}</SelectionHighlight>
-        <div style={{ 
-          marginTop: '8px', 
-          fontSize: '0.95em', 
-          opacity: 0.85,
-          color: '#64748b', // Slate-500 for context, regardless of theme
-          whiteSpace: 'pre-wrap', // Preserve line breaks
-          maxHeight: '150px',
-          overflowY: 'auto',
-          border: afterContext ? 'none' : '1px dashed #cbd5e1',
-          padding: afterContext ? '0' : '4px',
-          borderRadius: '4px',
-          minHeight: afterContext ? '0' : '20px'
-        }}>
-          {afterContext || 'No context after selection'}
+        <SelectionHighlight>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {selection.text || ''}
+          </ReactMarkdown>
+        </SelectionHighlight>
+        <div style={{...contextStyle, marginTop: '8px', marginBottom: '0'}}>
+          {afterContext ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {afterContext}
+            </ReactMarkdown>
+          ) : (
+            'No context after selection'
+          )}
         </div>
       </>
     );
