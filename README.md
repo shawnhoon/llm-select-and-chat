@@ -5,7 +5,9 @@ A flexible React component for text selection and AI chat integration. This pack
 ## Features
 
 - 🔍 **Text Selection**: Select text anywhere on your page and discuss it with an AI assistant
-- 🖼️ **Image Support**: Paste images directly into the chat input
+- 🖼️ **Image Support**: 
+  - Paste images directly into the chat input
+  - Select images on the page to include in the selection context
 - 🔄 **Multiple LLM Providers**: Support for OpenAI, Gemini, Claude, and custom providers
 - 🎨 **Theming**: Light/dark mode and customizable themes
 - 📱 **Responsive**: Works across desktop and mobile
@@ -59,12 +61,42 @@ function App() {
 
 ## Handling Images
 
-The component supports pasting images directly from clipboard:
+The component supports two ways of working with images:
+
+### 1. Pasting Images in Chat
+
+Paste images directly from clipboard:
 
 1. Copy an image to your clipboard (e.g., take a screenshot)
 2. Click on the chat input field
 3. Paste using Ctrl+V / Cmd+V
 4. Send with or without an accompanying text message
+
+### 2. Selecting Images with Text
+
+You can also select images on the page to include in the selection context:
+
+```jsx
+import { SelectChat, SelectableImage } from 'llm-select-and-chat';
+
+function App() {
+  return (
+    <div>
+      <div>
+        <p>Select this text and click an image below to include both in your selection.</p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <SelectableImage src="/image1.jpg" alt="Selectable image 1" />
+          <SelectableImage src="/image2.jpg" alt="Selectable image 2" />
+        </div>
+      </div>
+      
+      <SelectChat apiKey="your-api-key" />
+    </div>
+  );
+}
+```
+
+Images are automatically rendered in the selection context, allowing the AI to discuss both the selected text and images together.
 
 ## Selection Context
 
@@ -83,7 +115,11 @@ With full document extraction enabled, the complete text content of the page wil
 
 ## Documentation
 
-For complete documentation, including advanced usage and API reference, see [usage.md](./usage.md).
+For complete documentation, including advanced usage and API reference, see:
+
+- [Usage Guide](./usage.md)
+- [API Reference](./docs/api-reference.md)
+- [Image Selection Guide](./docs/image-selection.md)
 
 ## Examples
 

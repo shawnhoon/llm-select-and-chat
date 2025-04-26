@@ -228,7 +228,14 @@ Note that including the full document may increase token usage when communicatin
 
 ## Image Support
 
-The component supports pasting images from clipboard:
+The component supports two ways of working with images:
+
+1. **Pasting images directly into the chat input**: Users can paste images from their clipboard into messages
+2. **Including images in selections**: Users can select both text and images to include in the selection context
+
+### Image Attachments in Messages
+
+Images can be pasted directly from clipboard:
 
 ```jsx
 <SelectChat
@@ -254,6 +261,38 @@ interface Attachment {
   mimeType?: string;
 }
 ```
+
+### Image Attachments in Selections
+
+The library now supports including images as part of the selection context. This allows users to select both text and images to discuss with the AI assistant.
+
+Basic usage:
+
+```jsx
+import { SelectChat, SelectableImage } from 'llm-select-and-chat';
+
+function App() {
+  return (
+    <div>
+      <p>Selectable text content</p>
+      <SelectableImage src="/path/to/image.jpg" alt="Description" />
+      <SelectChat apiKey="your-api-key" />
+    </div>
+  );
+}
+```
+
+When images are selected, they'll be included in the `attachments` array of the Selection object:
+
+```typescript
+interface Selection {
+  text: string;
+  // ... other properties
+  attachments?: Attachment[]; // Selected images
+}
+```
+
+For complete documentation on image selection, see [Image Selection and Attachments Guide](docs/image-selection.md).
 
 ## Vanilla JavaScript API
 

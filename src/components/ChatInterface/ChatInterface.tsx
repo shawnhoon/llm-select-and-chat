@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, CSSProperties } from 'react';
+import React, { useState, useRef, useEffect, CSSProperties, useContext } from 'react';
 // Version: 1.0.1 - Context Preservation Fix (2024-05-29)
 import styled from 'styled-components';
 import ReactMarkdown from 'react-markdown';
@@ -6,6 +6,9 @@ import remarkGfm from 'remark-gfm';
 import { Message as MessageType, Conversation, UserPreferences, LLMProvider, Selection, Attachment } from '../../types';
 import { Message } from './Message';
 import { ProviderSelector } from './ProviderSelector';
+import { SelectionCaptureProvider, SelectionCaptureContext } from '../SelectionCapture';
+import { ImageSelectionPanel } from './ImageSelectionPanel';
+import { MessageInput } from './MessageInput';
 
 // Types
 interface ChatInterfaceProps {
@@ -47,28 +50,6 @@ const InputContainer = styled.div`
   border-top: 1px solid ${props => props.theme.colors.border};
   background-color: ${props => props.theme.colors.backgroundLight};
   border-radius: 0 0 ${props => props.theme.borderRadius.medium} ${props => props.theme.borderRadius.medium};
-`;
-
-const MessageInput = styled.textarea`
-  flex: 1;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 25px;
-  background-color: ${props => props.theme.colors.background};
-  color: ${props => props.theme.colors.text};
-  font-family: inherit;
-  font-size: ${props => props.theme.fontSizes.medium};
-  resize: none;
-  min-height: 48px;
-  max-height: 200px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, height 0.2s ease;
-  overflow-y: auto;
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: 0 0 0 2px ${props => props.theme.colors.primaryLight};
-  }
 `;
 
 const SendButton = styled.button`
@@ -349,7 +330,115 @@ const MarkdownCode = styled.code`
   font-size: 0.9em;
 `;
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+// Add new styled components for image selection
+const ImagePickerButton = styled.button`
+  background-color: transparent;
+  color: ${props => props.theme.colors.primary};
+  border: none;
+  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
+  border-radius: ${props => props.theme.borderRadius.small};
+  cursor: pointer;
+  font-size: ${props => props.theme.fontSizes.small};
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.primaryLight}30;
+  }
+`;
+
+const ImageIcon = styled.span`
+  font-size: 16px;
+`;
+
+const SelectionActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+// Add a wrapper component to access the selection capture context
+const SelectionWrapper: React.FC<ChatInterfaceProps> = (props) => {
+  const { 
+    selection: selectionProp, 
+    conversation, 
+    onSendMessage, 
+    onNewConversation, 
+    onError,
+    onProviderChange,
+    userPreferences,
+    llmProvider,
+    inputRef
+  } = props;
+  
+  // Create a local copy of the selection to synchronize with context
+  const [localSelection, setLocalSelection] = useState<Selection | null>(selectionProp || null);
+  
+  // Update local selection when the prop changes
+  useEffect(() => {
+    setLocalSelection(selectionProp || null);
+  }, [selectionProp]);
+  
+  return (
+    <SelectionCaptureProvider autoCapture={false}>
+      <SelectionContextBridge 
+        selection={localSelection}
+        setSelection={setLocalSelection}
+        {...props}
+      />
+    </SelectionCaptureProvider>
+  );
+};
+
+// Bridge component to connect selection context with local state
+const SelectionContextBridge: React.FC<ChatInterfaceProps & { setSelection: (selection: Selection | null) => void }> = (props) => {
+  const selectionContext = useContext(SelectionCaptureContext);
+  
+  // Make sure context exists before using it
+  if (!selectionContext) {
+    console.error('SelectionCaptureContext is undefined. Make sure this component is used within a SelectionCaptureProvider.');
+    return <ChatInterfaceInner {...props} />;
+  }
+  
+  const { selectedImages } = selectionContext;
+  const { selection, setSelection, ...chatProps } = props;
+  
+  // Log what we're getting from context
+  console.log('🔍 SelectionContextBridge - Context images:', selectedImages);
+  console.log('🔍 SelectionContextBridge - Current selection:', selection);
+  
+  // CRITICAL FIX: Do not replace existing attachments with empty array
+  let enhancedSelection = selection;
+  
+  if (selection) {
+    const existingAttachments = selection.attachments || [];
+    console.log('👁️ Existing attachments:', existingAttachments.length);
+    
+    // Only replace attachments if we have images in context or no existing attachments
+    if (selectedImages.length > 0 || existingAttachments.length === 0) {
+      enhancedSelection = {
+        ...selection,
+        attachments: selectedImages.length > 0 ? selectedImages : existingAttachments
+      };
+    }
+  }
+  
+  // Log what we're sending to the inner component
+  if (enhancedSelection) {
+    const attachments = enhancedSelection.attachments || [];
+    console.log('✅ Final selection with images:', attachments.length, 'images');
+    if (attachments.length > 0) {
+      console.log('📸 Image URLs:', attachments.map(a => a.url));
+    }
+  }
+  
+  // Pass the selection with proper attachments to inner component
+  return <ChatInterfaceInner {...chatProps} selection={enhancedSelection} />;
+};
+
+// The inner ChatInterface component (rename the original component)
+const ChatInterfaceInner: React.FC<ChatInterfaceProps> = ({
   conversation,
   userPreferences,
   llmProvider,
@@ -365,6 +454,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
+  const [showSelectionsInChat, setShowSelectionsInChat] = useState<boolean>(true);
   const [apiKeys, setApiKeys] = useState<{
     openai?: string;
     gemini?: string;
@@ -374,6 +464,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     gemini: llmProvider?.type === 'gemini' ? llmProvider.apiKey : '',
     claude: llmProvider?.type === 'claude' ? llmProvider.apiKey : '',
   });
+  
+  // Add state for image selection panel
+  const [showImagePanel, setShowImagePanel] = useState(false);
   
   // Adjust input height based on content
   const adjustInputHeight = () => {
@@ -400,20 +493,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   // Add a new effect to handle selection changes
   useEffect(() => {
-    console.log('%c🔄 Selection in ChatInterface updated (v1.0.1):', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;', selection);
-    
     if (selection) {
-      // Log all selection properties
-      console.log('Selection properties:');
-      Object.entries(selection).forEach(([key, value]) => {
-        if (typeof value === 'string') {
-          console.log(`- ${key}: ${value.length} chars${value.length > 0 ? ` (sample: "${value.substring(0, Math.min(30, value.length))}${value.length > 30 ? '...' : ''}")` : ''}`);
-        } else {
-          console.log(`- ${key}: ${value}`);
-        }
-      });
-      
-      // Create a deep copy to ensure all properties are preserved
+      // Create a complete copy with all properties
       const selectionCopy = {
         text: selection.text || '',
         contextBefore: selection.contextBefore || '',
@@ -421,24 +502,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         url: selection.url || '',
         location: selection.location || '',
         fullDocument: selection.fullDocument || ''
-      };
+      } as Selection;
       
-      console.log('Selection copy created with:', {
-        textLength: selectionCopy.text.length,
-        contextBeforeLength: selectionCopy.contextBefore.length,
-        contextAfterLength: selectionCopy.contextAfter.length,
-        keys: Object.keys(selectionCopy).join(', ')
-      });
-      
-      // Log context samples if they exist
-      if (selectionCopy.contextBefore && selectionCopy.contextBefore.length > 0) {
-        console.log('Context before sample:', selectionCopy.contextBefore.substring(0, Math.min(50, selectionCopy.contextBefore.length)) + '...');
+      // Explicitly add attachments if present
+      if (selection.attachments && selection.attachments.length > 0) {
+        selectionCopy.attachments = [...selection.attachments];
       }
       
-      if (selectionCopy.contextAfter && selectionCopy.contextAfter.length > 0) {
-        console.log('Context after sample:', selectionCopy.contextAfter.substring(0, Math.min(50, selectionCopy.contextAfter.length)) + '...');
-      }
-      
+      // Apply the selection to state
       setCurrentSelection(selectionCopy);
     } else if (selection === null) {
       setCurrentSelection(null);
@@ -582,100 +653,116 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
   
+  // Format selection context for display
   const formatSelectionContext = (selection: Selection | null) => {
     if (!selection) return null;
     
-    // Use optional chaining and nullish coalescing to safely access properties
-    const beforeContext = selection.contextBefore ?? '';
-    const afterContext = selection.contextAfter ?? '';
+    // IMPORTANT: Direct inspection of data when rendering
+    console.log('🎨 Rendering selection in formatSelectionContext:', selection);
+    console.log('🎨 Has attachments property?', selection.hasOwnProperty('attachments'));
+    console.log('🎨 Raw attachments value:', selection.attachments);
     
-    // Enhanced logging to help debug context issues
-    console.log('%c📋 Rendering selection context (v1.0.1):', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;', {
-      selectionTextLength: selection.text?.length || 0,
-      beforeContextLength: beforeContext.length,
-      afterContextLength: afterContext.length,
-      hasBeforeContext: beforeContext.length > 0,
-      hasAfterContext: afterContext.length > 0,
-      beforeContextSample: beforeContext ? beforeContext.substring(0, Math.min(50, beforeContext.length)) + (beforeContext.length > 50 ? '...' : '') : '',
-      afterContextSample: afterContext ? afterContext.substring(0, Math.min(50, afterContext.length)) + (afterContext.length > 50 ? '...' : '') : '',
-      hasAttachments: !!selection.attachments?.length,
-      attachmentsCount: selection.attachments?.length || 0,
-      selectionKeys: Object.keys(selection).join(', ')
-    });
+    // Safely handle attachments with proper type safety
+    const attachments = selection.attachments || [];
+    const hasAttachments = attachments.length > 0;
     
-    const contextStyle: CSSProperties = {
-      marginBottom: '8px',
-      fontSize: '0.95em',
-      opacity: 0.85,
-      color: '#64748b', // Slate-500 for context, regardless of theme
-      whiteSpace: 'pre-wrap', // Preserve line breaks
-      maxHeight: '150px',
-      overflowY: 'auto',
-      border: beforeContext ? 'none' : '1px dashed #cbd5e1',
-      padding: beforeContext ? '0' : '4px',
-      borderRadius: '4px',
-      minHeight: beforeContext ? '0' : '20px'
-    };
+    // Debug each attachment in detail
+    if (hasAttachments) {
+      console.log(`🖼️ Found ${attachments.length} attachments to render:`);
+      attachments.forEach((attachment, i) => {
+        console.log(`  ${i+1}. ${attachment.name || 'Unnamed'}: ${attachment.url ? '✓ Has URL' : '❌ No URL'}`);
+      });
+    }
     
     return (
-      <>
-        <div style={contextStyle}>
-          {beforeContext ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {beforeContext}
-            </ReactMarkdown>
-          ) : (
-            'No context before selection'
-          )}
-        </div>
-        <SelectionHighlight>
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {selection.text || ''}
-          </ReactMarkdown>
-        </SelectionHighlight>
-        <div style={{...contextStyle, marginTop: '8px', marginBottom: '0'}}>
-          {afterContext ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {afterContext}
-            </ReactMarkdown>
-          ) : (
-            'No context after selection'
-          )}
+      <div>
+        {/* Selected Text and Context */}
+        <div style={{ fontWeight: 500, marginBottom: '10px' }}>
+          {hasAttachments ? 'Selected Content:' : 'Selected Text:'}
         </div>
         
-        {/* Render images if selection has attachments */}
-        {selection.attachments && selection.attachments.length > 0 && (
+        {selection.contextBefore && (
+          <div style={{
+            color: '#666',
+            paddingBottom: '5px',
+            borderBottom: '1px solid #eee',
+            fontSize: '0.85em',
+            marginBottom: '5px',
+          }}>
+            {selection.contextBefore}
+          </div>
+        )}
+        
+        <div style={{
+          fontWeight: 600,
+          color: '#2563eb',
+          padding: '5px',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          marginBottom: '5px',
+        }}>
+          {selection.text}
+        </div>
+        
+        {selection.contextAfter && (
+          <div style={{
+            color: '#666',
+            paddingTop: '5px',
+            borderTop: '1px solid #eee',
+            fontSize: '0.85em',
+          }}>
+            {selection.contextAfter}
+          </div>
+        )}
+        
+        {/* Image thumbnails - CRITICAL RENDERING WITH EXTRA SAFETY CHECKS */}
+        {hasAttachments && (
           <div style={{ marginTop: '12px' }}>
-            <div style={{ fontSize: '0.85em', marginBottom: '8px', fontWeight: 500 }}>
-              Selected Images ({selection.attachments.length}):
+            <div style={{ fontSize: '0.9em', marginBottom: '8px', fontWeight: 500, color: '#2563eb' }}>
+              Selected Images ({attachments.length}):
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {selection.attachments.map(attachment => (
-                attachment.type === 'image' && attachment.url && (
-                  <div key={attachment.id} style={{ 
-                    width: '100px', 
-                    height: '100px',
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <img 
-                      src={attachment.url} 
-                      alt={attachment.name || 'Selected image'} 
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {attachments.map((attachment, index) => {
+                // Extra safety check
+                console.log(`Rendering attachment ${index}:`, attachment);
+                
+                if (attachment && attachment.type === 'image' && attachment.url) {
+                  return (
+                    <div 
+                      key={attachment.id || `img-${index}`} 
                       style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'cover'
+                        width: '120px', 
+                        height: '120px',
+                        borderRadius: '6px',
+                        overflow: 'hidden',
+                        border: '2px solid #3b82f6',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
                       }}
-                      onClick={() => window.open(attachment.url, '_blank')}
-                    />
-                  </div>
-                )
-              ))}
+                    >
+                      <img 
+                        src={attachment.url} 
+                        alt={attachment.name || `Image ${index + 1}`} 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover'
+                        }}
+                        onClick={() => window.open(attachment.url, '_blank')}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
         )}
-      </>
+        
+        <div style={{ fontSize: '0.7em', color: '#666', marginTop: '10px', textAlign: 'right' }}>
+          {selection.text.split(/\s+/).length} words selected
+          {hasAttachments && ` • ${attachments.length} images`}
+        </div>
+      </div>
     );
   };
   
@@ -699,12 +786,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return text.trim().split(/\s+/).length;
   };
   
+  // Handle provider change
   const handleProviderChange = (newProvider: LLMProvider) => {
     if (onProviderChange) {
       onProviderChange(newProvider);
     }
   };
   
+  // Handle API keys change
   const handleApiKeysChange = (newKeys: { openai?: string; gemini?: string; claude?: string }) => {
     setApiKeys(newKeys);
   };
@@ -714,6 +803,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (currentSelection) {
       setCurrentSelection(null);
     }
+  };
+  
+  // Toggle image selection panel
+  const toggleImagePanel = () => {
+    setShowImagePanel(prev => !prev);
   };
   
   return (
@@ -748,10 +842,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               {formatSelectionContext(currentSelection)}
               <SelectionInfo>
                 <span>{getWordCount(currentSelection.text)} words selected</span>
-                <SelectionActionButton onClick={handleAskAboutSelection}>
-                  Ask about this selection
-                </SelectionActionButton>
+                <SelectionActions>
+                  <ImagePickerButton onClick={toggleImagePanel}>
+                    <ImageIcon>🖼️</ImageIcon> Images
+                  </ImagePickerButton>
+                  <SelectionActionButton onClick={handleAskAboutSelection}>
+                    Ask about this selection
+                  </SelectionActionButton>
+                </SelectionActions>
               </SelectionInfo>
+              
+              {/* Image selection panel */}
+              <ImageSelectionPanel 
+                visible={showImagePanel} 
+                onClose={() => setShowImagePanel(false)} 
+              />
             </SelectionContent>
           </SelectionContext>
         )}
@@ -789,19 +894,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </ImagePreviewContainer>
         )}
         <MessageInput
-          ref={inputRef}
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
+          onSendMessage={handleSendMessage}
           placeholder={attachments.length > 0 ? "Add a caption to your image(s) or press Send..." : "Type your message or paste an image..."}
-          rows={1}
           disabled={isLoading}
+          isSelectionActive={!!currentSelection}
         />
-        <SendButton onClick={handleSendMessage} disabled={isLoading || (!inputValue.trim() && attachments.length === 0)}>
-          {isLoading ? 'Sending...' : 'Send'}
-        </SendButton>
       </InputContainer>
     </ChatContainer>
   );
-}; 
+};
+
+// Export the wrapped component
+export const ChatInterface = SelectionWrapper; 

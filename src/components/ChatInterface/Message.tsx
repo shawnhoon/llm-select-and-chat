@@ -199,8 +199,8 @@ const MarkdownImage = styled.img`
 interface MarkdownCodeProps {
   isUser: boolean;
   theme: DefaultTheme;
-}
-
+    }
+    
 const MarkdownPre = styled.pre<{ isUser: boolean }>`
   background-color: ${(props) => props.isUser 
     ? 'rgba(0, 0, 0, 0.2)' 
@@ -261,6 +261,15 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
 
   // Format selection context
   const formatSelectionContext = (selection: Selection) => {
+    // Safely check if attachments exist with explicit type checking
+    const attachments = selection.attachments || [];
+    const hasAttachments = attachments.length > 0;
+    
+    // Debug log
+    if (hasAttachments) {
+      console.log('Message component rendering attachments:', attachments.length);
+    }
+    
     return (
       <>
         <SelectionLabel>Selected Text:</SelectionLabel>
@@ -271,7 +280,7 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
             opacity: 0.85,
           }}>
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {selection.contextBefore}
+            {selection.contextBefore}
             </ReactMarkdown>
           </div>
         )}
@@ -287,50 +296,54 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
             opacity: 0.85,
           }}>
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {selection.contextAfter}
+            {selection.contextAfter}
             </ReactMarkdown>
           </div>
         )}
         
-        {/* Render images in selection context */}
-        {selection.attachments && selection.attachments.length > 0 && (
+        {/* Enhanced image display */}
+        {hasAttachments && (
           <div style={{ marginTop: '12px' }}>
             <div style={{ 
-              fontSize: '0.85em', 
+              fontSize: '0.9em', 
               marginBottom: '8px', 
               fontWeight: 500, 
-              color: '#64748b'
+              color: '#2563eb'
             }}>
-              Images from selection:
+              Selected Images ({attachments.length}):
             </div>
             <div style={{ 
               display: 'flex', 
               flexWrap: 'wrap', 
-              gap: '8px'
+              gap: '10px'
             }}>
-              {selection.attachments.map(attachment => (
-                attachment.type === 'image' && attachment.url && (
-                  <div key={attachment.id} style={{ 
-                    width: '80px', 
-                    height: '80px',
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(0,0,0,0.1)'
-                  }}>
-                    <img 
-                      src={attachment.url} 
-                      alt={attachment.name || 'Selected image'} 
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'cover',
-                        cursor: 'pointer'
-                      }}
-                      onClick={() => window.open(attachment.url, '_blank')}
-                    />
-                  </div>
-                )
-              ))}
+              {attachments.map((attachment, index) => {
+                if (attachment.type === 'image' && attachment.url) {
+                  return (
+                    <div key={attachment.id || index} style={{ 
+                      width: '120px', 
+                      height: '120px',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      border: '2px solid #3b82f6',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                    }}>
+                      <img 
+                        src={attachment.url} 
+                        alt={attachment.name || `Image ${index+1}`} 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(attachment.url, '_blank')}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
           </div>
         )}

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelectChat Image Selection Example</title>
+  <!-- Critical fix for styled-components -->
+  <script>
+    window.process = { env: { NODE_ENV: 'production' } };
+    // Fix for styled-components 'default' property
+    window.React = window.React || {};
+    window.ReactDOM = window.ReactDOM || {};
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/styled-components@5.3.10/dist/styled-components.min.js"></script>
+  <script>
+    // Create a placeholder for modules that will be loaded later
+    window.remarkGfm = {};
+    window.ReactMarkdown = {}; 
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid #eaeaea;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      color: #2563eb;
+    }
+    main {
+      display: flex;
+      flex-grow: 1;
+    }
+    .content {
+      flex: 2;
+      padding: 20px;
+      max-width: 800px;
+    }
+    .chat-container {
+      flex: 0.3;
+      height: 800px;
+      width: 280px;
+      border: 1px solid #eaeaea;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    p {
+      margin-bottom: 1rem;
+    }
+    .api-key-input {
+      margin-bottom: 1rem;
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    pre {
+      background-color: #f5f7fa;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .api-key-prompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 80%;
+      z-index: 10;
+    }
+    .api-key-prompt p {
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .api-key-prompt input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .api-key-prompt button {
+      width: 100%;
+    }
+    .selectable-image {
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      margin: 10px 0;
+      max-width: 100%;
+    }
+    .selectable-image:hover {
+      border-color: #2563eb;
+    }
+    .selectable-image.selected {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+      position: relative;
+    }
+    .selectable-image.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: #2563eb;
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .image-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .image-wrapper {
+      position: relative;
+      width: 200px;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .image-caption {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 5px;
+      text-align: center;
+      height: 40px;
+      overflow: hidden;
+    }
+    /* Selection debug panel styling */
+    .selection-debug-panel {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f0f4f8;
+      border-radius: 8px;
+      border: 1px solid #d1d9e6;
+    }
+    .selection-debug-panel h3 {
+      margin-top: 0;
+      color: #2d3748;
+      border-bottom: 1px solid #cbd5e0;
+      padding-bottom: 8px;
+    }
+    .selection-debug-item {
+      margin-bottom: 10px;
+    }
+    .selection-debug-label {
+      font-weight: bold;
+      margin-right: 10px;
+      display: inline-block;
+      min-width: 120px;
+    }
+    .selection-debug-value {
+      font-family: monospace;
+      background-color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .selection-thumbnail-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .selection-thumbnail {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #cbd5e0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SelectChat Image Selection Example</h1>
+  </header>
+  
+  <main>
+    <div class="content">
+      <h2>How to Use</h2>
+      <p>
+        This example demonstrates how to use the SelectChat component with image selections. You can select text on this page,
+        click on images to add them to your selection, and interact with the AI assistant in the chat panel.
+      </p>
+      
+      <h3>API Key</h3>
+      <p>
+        Enter your OpenAI API key to try the component:
+      </p>
+      <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your OpenAI API key here">
+      <button id="saveApiKey">Save API Key</button>
+      
+      <h3>Sample Text for Selection</h3>
+      <p>
+        The SelectChat component allows users to select text on a webpage and discuss it with an AI assistant. 
+        This makes it useful for research, learning, and content creation. When you select text, the AI will 
+        have access to the selection and can answer questions about it.
+      </p>
+      <p>
+        Try selecting this paragraph and asking a question about it in the chat panel. The AI will respond with
+        information related to your selection.
+      </p>
+      
+      <h3>Sample Images for Selection</h3>
+      <p>
+        Click on any of the images below to select them. After selecting text, you can also add images to your selection.
+        Try asking the assistant about both your selected text and the images.
+      </p>
+      
+      <div class="image-gallery">
+        <div class="image-wrapper">
+          <img src="https://images.unsplash.com/photo-1669221262286-43c5e912f1ad" alt="Mountain landscape" id="image1" class="selectable-image" width="200">
+          <div class="image-caption">Mountain landscape with lake and forest</div>
+        </div>
+        <div class="image-wrapper">
+          <img src="https://images.unsplash.com/photo-1579783901586-d88db74b4fe4" alt="Beach sunset" id="image2" class="selectable-image" width="200">
+          <div class="image-caption">Sunset at a tropical beach</div>
+        </div>
+        <div class="image-wrapper">
+          <img src="https://images.unsplash.com/photo-1682695797873-aa4a7ab40ded" alt="City skyline" id="image3" class="selectable-image" width="200">
+          <div class="image-caption">Urban skyline at night</div>
+        </div>
+      </div>
+      
+      <!-- New Selection Debug Panel -->
+      <div id="selection-debug-panel" class="selection-debug-panel">
+        <h3>Current Selection State</h3>
+        <div class="selection-debug-item">
+          <span class="selection-debug-label">Text:</span>
+          <span id="debug-text" class="selection-debug-value">No text selected</span>
+        </div>
+        <div class="selection-debug-item">
+          <span class="selection-debug-label">Text Length:</span>
+          <span id="debug-text-length" class="selection-debug-value">0</span>
+        </div>
+        <div class="selection-debug-item">
+          <span class="selection-debug-label">Images:</span>
+          <span id="debug-images-count" class="selection-debug-value">0</span>
+        </div>
+        <div class="selection-debug-item">
+          <div id="debug-image-thumbnails" class="selection-thumbnail-container">
+            <!-- Thumbnails will be inserted here -->
+          </div>
+        </div>
+      </div>
+      
+      <h3>Code Example</h3>
+      <pre><code>
+// Creating a selection with an image attachment
+const selection = {
+  text: "Selected text description",
+  contextBefore: "Text that comes before the selection",
+  contextAfter: "Text that comes after the selection",
+  attachments: [
+    {
+      id: "img_1",
+      type: "image",
+      name: "Mountain landscape",
+      url: "https://example.com/image.jpg"
+    }
+  ]
+};
+
+// Send the selection to the chat interface
+selectChat.setSelection(selection);
+      </code></pre>
+    </div>
+    
+    <div id="chat-container" class="chat-container">
+      <!-- SelectChat will be initialized here -->
+    </div>
+  </main>
+  
+  <script src="/dist/index.umd.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const chatContainer = document.getElementById('chat-container');
+      const apiKeyInput = document.getElementById('apiKeyInput');
+      const saveApiKeyButton = document.getElementById('saveApiKey');
+      const selectableImages = document.querySelectorAll('.selectable-image');
+      
+      // Debug element references
+      const debugTextElem = document.getElementById('debug-text');
+      const debugTextLengthElem = document.getElementById('debug-text-length');
+      const debugImagesCountElem = document.getElementById('debug-images-count');
+      const debugImageThumbnailsElem = document.getElementById('debug-image-thumbnails');
+      
+      // Variables to store the current selection
+      let currentSelection = null;
+      let selectedImages = [];
+      let lastSelectionText = null; // Track last selection to prevent loops
+      let isProcessingSelection = false; // Flag to prevent concurrent processing
+      
+      // Always initialize, even without an API key
+      initializeSelectChat();
+      
+      // Check for saved API key in localStorage
+      const savedApiKey = localStorage.getItem('selectchat_api_key');
+      if (savedApiKey) {
+        apiKeyInput.value = savedApiKey;
+        // Update the existing instance with the API key
+        if (window.selectChatInstance) {
+          window.selectChatInstance.updateConfig({ apiKey: savedApiKey });
+        }
+      }
+      
+      // Save API key and update config
+      saveApiKeyButton.addEventListener('click', function() {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+          localStorage.setItem('selectchat_api_key', apiKey);
+          
+          // Update the existing instance with the API key
+          if (window.selectChatInstance) {
+            window.selectChatInstance.updateConfig({ apiKey: apiKey });
+            
+            // Remove the API key prompt if it exists
+            const prompt = document.querySelector('.api-key-prompt');
+            if (prompt) {
+              prompt.remove();
+            }
+          }
+        } else {
+          alert('Please enter a valid API key');
+        }
+      });
+      
+      // Using mouseup event instead of selectionchange for more stable text selection
+      document.addEventListener('mouseup', function(e) {
+        // Skip if clicking on an image (handled separately)
+        if (e.target.classList && e.target.classList.contains('selectable-image')) {
+          return;
+        }
+        
+        // Skip if already processing 
+        if (isProcessingSelection) return;
+        
+        // Get the current selection
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+        
+        // Skip empty selections
+        if (selectedText.length === 0) return;
+        
+        console.log('Mouse up selection:', selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : ''));
+        
+        // Set processing flag to avoid reentrance
+        isProcessingSelection = true;
+        
+        try {
+          // Store this text to avoid processing it again
+          lastSelectionText = selectedText;
+          
+          const range = selection.getRangeAt(0);
+          
+          // Get some context before and after (simplified version)
+          const container = range.commonAncestorContainer;
+          let contextBefore = '';
+          let contextAfter = '';
+          
+          if (container.nodeType === Node.TEXT_NODE && container.parentNode) {
+            const parentContent = container.parentNode.textContent || '';
+            const selectionStart = parentContent.indexOf(selectedText);
+            
+            if (selectionStart > 0) {
+              contextBefore = parentContent.substring(0, selectionStart);
+            }
+            
+            const selectionEnd = selectionStart + selectedText.length;
+            if (selectionEnd < parentContent.length) {
+              contextAfter = parentContent.substring(selectionEnd);
+            }
+          }
+          
+          // Only update if we have text
+          if (selectedText.length > 0) {
+            // Update current selection
+            currentSelection = {
+              text: selectedText,
+              contextBefore: contextBefore.trim().substring(0, 500), // Limit long contexts
+              contextAfter: contextAfter.trim().substring(0, 500) // Limit long contexts
+            };
+            
+            console.log('Text selection created:', { 
+              text: selectedText.substring(0, 20) + (selectedText.length > 20 ? '...' : ''),
+              contextBeforeLength: contextBefore.trim().length,
+              contextAfterLength: contextAfter.trim().length
+            });
+            
+            // Create a selection object with both text and any images
+            const textAndImageSelection = {
+              ...currentSelection,
+              attachments: selectedImages.length > 0 ? [...selectedImages] : undefined
+            };
+            
+            // Send directly to the chat component
+            if (window.selectChatInstance && typeof window.selectChatInstance.setSelection === 'function') {
+              console.log('Setting text selection with', selectedImages.length, 'attached images');
+              // Use a deep copy to avoid reference issues
+              setTimeout(() => {
+                window.selectChatInstance.setSelection(JSON.parse(JSON.stringify(textAndImageSelection)));
+              }, 10);
+            }
+            
+            // Update debug display
+            updateDebugDisplay();
+          }
+        } finally {
+          // Release the processing flag after a short delay
+          setTimeout(() => {
+            isProcessingSelection = false;
+          }, 500);
+        }
+      });
+      
+      // Function to update the selection with images
+      function updateSelection() {
+        console.log('updateSelection called');
+        
+        // Check if API is available and ready
+        if (!window.selectChatInstance || typeof window.selectChatInstance.setSelection !== 'function') {
+          console.error('SelectChat API not ready yet. Try again in a moment.');
+          return;
+        }
+        
+        // If no selection or images, clear any current selection
+        if (!currentSelection && selectedImages.length === 0) {
+          console.log('Clearing selection');
+          window.selectChatInstance.clearSelection();
+          return;
+        }
+        
+        // Create a simplified selection object to reduce chance of loops
+        const simpleSelection = {
+          text: currentSelection ? currentSelection.text : "Selected images",
+          contextBefore: currentSelection ? currentSelection.contextBefore : "",
+          contextAfter: currentSelection ? currentSelection.contextAfter : "",
+          attachments: selectedImages.length > 0 ? [...selectedImages] : undefined
+        };
+        
+        console.log('Setting selection:', {
+          textLength: simpleSelection.text.length,
+          hasContext: !!(simpleSelection.contextBefore || simpleSelection.contextAfter),
+          hasAttachments: !!simpleSelection.attachments,
+          attachmentsCount: selectedImages.length
+        });
+        
+        // Create a deep copy to avoid reference issues
+        const selectionToSend = JSON.parse(JSON.stringify(simpleSelection));
+        
+        // Use a brief timeout to avoid any race conditions
+        setTimeout(() => {
+          window.selectChatInstance.setSelection(selectionToSend);
+        }, 10);
+        
+        // Update debug display
+        updateDebugDisplay();
+      }
+      
+      // Function to update the debug display
+      function updateDebugDisplay() {
+        // Update text display
+        if (currentSelection && currentSelection.text) {
+          const displayText = currentSelection.text.length > 30 ? 
+            currentSelection.text.substring(0, 30) + '...' : 
+            currentSelection.text;
+          debugTextElem.textContent = displayText;
+          debugTextLengthElem.textContent = currentSelection.text.length;
+        } else {
+          debugTextElem.textContent = 'No text selected';
+          debugTextLengthElem.textContent = '0';
+        }
+        
+        // Update images count
+        debugImagesCountElem.textContent = selectedImages.length;
+        
+        // Update image thumbnails
+        debugImageThumbnailsElem.innerHTML = '';
+        if (selectedImages.length > 0) {
+          selectedImages.forEach(img => {
+            if (img.url) {
+              const thumbnail = document.createElement('img');
+              thumbnail.src = img.url;
+              thumbnail.alt = img.name || 'Selected image';
+              thumbnail.className = 'selection-thumbnail';
+              thumbnail.title = img.name || 'Selected image';
+              debugImageThumbnailsElem.appendChild(thumbnail);
+            }
+          });
+        }
+      }
+      
+      function initializeSelectChat(apiKey = null) {
+        if (window.selectChatInstance) {
+          // Clean up previous instance if exists
+          if (typeof window.selectChatInstance.destroy === 'function') {
+            window.selectChatInstance.destroy();
+          }
+          chatContainer.innerHTML = '';
+        }
+        
+        // Check if LLMSelectAndChat is properly loaded
+        if (!window.LLMSelectAndChat || !window.LLMSelectAndChat.initSelectChat) {
+          console.error('LLMSelectAndChat library not properly loaded. Check that the UMD build is accessible.');
+          return;
+        }
+        
+        // Initialize new instance
+        try {
+          // Store the API object that's returned from initSelectChat
+          const selectChatObj = window.LLMSelectAndChat.initSelectChat({
+            container: chatContainer,
+            apiKey: apiKey,
+            theme: 'system',
+            userPreferences: {
+              showTimestamps: true,
+              codeHighlighting: true
+            },
+            onSelectionCapture: (selection) => {
+              console.log('Text selected via library:', selection);
+              return selection;
+            },
+            onSelectionChange: (selection) => {
+              // Only log and update if we're not currently processing
+              if (!isProcessingSelection) {
+                console.log('Selection changed:', selection ? {
+                  text: selection.text ? selection.text.substring(0, 30) + '...' : 'none',
+                  hasAttachments: !!selection?.attachments?.length
+                } : null);
+                
+                if (selection) {
+                  // Wait a brief moment to avoid conflicts with other selection processes
+                  setTimeout(() => {
+                    // Update our tracking of the current selection
+                    currentSelection = selection;
+                    // Update lastSelectionText to prevent loops
+                    lastSelectionText = selection.text;
+                    // Update debug display
+                    updateDebugDisplay();
+                  }, 10);
+                } else {
+                  // Null selection - clear tracking
+                  currentSelection = null;
+                  lastSelectionText = null;
+                  // Update debug display
+                  updateDebugDisplay();
+                }
+              }
+            },
+            onConversationUpdate: (conversation) => {
+              console.log('Conversation updated:', conversation);
+            },
+            onError: (error) => {
+              console.error('SelectChat error:', error);
+            },
+            onInit: (api) => {
+              // This is the proper way to get the API object
+              console.log('SelectChat API initialized:', api);
+              window.selectChatInstance = api;
+              
+              // After SelectChat is initialized, set up the image selection handlers
+              setupImageSelectionHandlers();
+            }
+          });
+          
+          console.log('SelectChat initialized successfully');
+          
+          // If no API key is provided, show a prompt in the chat container
+          if (!apiKey) {
+            // Create API key prompt overlay
+            const apiKeyPrompt = document.createElement('div');
+            apiKeyPrompt.className = 'api-key-prompt';
+            
+            apiKeyPrompt.innerHTML = `
+              <p>Please enter your OpenAI API key to start chatting</p>
+              <input type="password" id="overlayApiKeyInput" placeholder="Enter your OpenAI API key">
+              <button id="overlayApiKeyButton">Start Chatting</button>
+            `;
+            
+            chatContainer.appendChild(apiKeyPrompt);
+            
+            // Set up the overlay button
+            const overlayInput = document.getElementById('overlayApiKeyInput');
+            const overlayButton = document.getElementById('overlayApiKeyButton');
+            
+            overlayButton.addEventListener('click', function() {
+              const key = overlayInput.value.trim();
+              if (key) {
+                // Update both the form input and the component
+                apiKeyInput.value = key;
+                localStorage.setItem('selectchat_api_key', key);
+                // Use the right API method if available
+                if (window.selectChatInstance && typeof window.selectChatInstance.updateConfig === 'function') {
+                  window.selectChatInstance.updateConfig({ apiKey: key });
+                }
+                apiKeyPrompt.remove();
+              } else {
+                alert('Please enter a valid API key');
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing SelectChat:', error);
+        }
+      }
+      
+      // Setup the image selection handlers after SelectChat is properly initialized
+      function setupImageSelectionHandlers() {
+        console.log('Setting up image selection handlers');
+        // Clear any previous selected images and reset UI
+        selectedImages = [];
+        selectableImages.forEach(img => img.classList.remove('selected'));
+        
+        // Handle clicks on selectable images
+        selectableImages.forEach(image => {
+          // Remove any existing click listeners to avoid duplicates
+          image.removeEventListener('click', imageClickHandler);
+          // Add fresh click listener
+          image.addEventListener('click', imageClickHandler);
+        });
+        
+        // Initialize debug display
+        updateDebugDisplay();
+      }
+      
+      // Separate the handler function to avoid duplicating code
+      function imageClickHandler() {
+        console.log('Image clicked:', this.id);
+        // Toggle selected state visually
+        this.classList.toggle('selected');
+        
+        const imageUrl = this.src;
+        const imageAlt = this.alt;
+        const imageId = this.id;
+        
+        if (this.classList.contains('selected')) {
+          // Add to selected images with proper object format matching Attachment type
+          // Make sure all required properties are set correctly
+          const newImage = {
+            id: `img_${imageId}_${Date.now()}`,
+            type: 'image',
+            name: imageAlt || 'Image',
+            url: imageUrl,
+            mimeType: 'image/jpeg', // Assuming jpeg for simplicity
+            data: null // The UI component might expect this, even if null
+          };
+          
+          selectedImages.push(newImage);
+          console.log('Added image to selection:', newImage);
+        } else {
+          // Remove from selected images
+          selectedImages = selectedImages.filter(img => img.url !== imageUrl);
+          console.log('Removed image from selection, remaining:', selectedImages.length);
+        }
+        
+        // Create a selection with only images if no text is selected
+        if (!currentSelection && selectedImages.length > 0) {
+          currentSelection = {
+            text: "Selected images",
+            contextBefore: "",
+            contextAfter: ""
+          };
+        } else if (selectedImages.length === 0 && currentSelection && currentSelection.text === "Selected images") {
+          // Reset current selection if we've removed all images and the selection was only for images
+          currentSelection = null;
+        }
+        
+        // Update debug display
+        updateDebugDisplay();
+        
+        // Create a direct selection for images only
+        if (selectedImages.length > 0) {
+          // Create a selection specifically for these images
+          const imageSelection = {
+            text: currentSelection?.text || 'Selected images',
+            contextBefore: currentSelection?.contextBefore || '',
+            contextAfter: currentSelection?.contextAfter || '',
+            attachments: [...selectedImages] // Key: make a copy
+          };
+          
+          console.log('Setting image selection directly:', {
+            textLength: imageSelection.text.length,
+            attachmentsCount: selectedImages.length,
+            firstImageName: selectedImages[0]?.name
+          });
+          
+          // Use direct API access with a slight delay
+          setTimeout(() => {
+            // Make sure to use a deep copy to avoid reference issues
+            window.selectChatInstance.setSelection(JSON.parse(JSON.stringify(imageSelection)));
+          }, 10);
+        } else {
+          // No images selected - update without images or clear if no text
+          if (currentSelection) {
+            const selectionWithoutImages = {
+              text: currentSelection.text,
+              contextBefore: currentSelection.contextBefore,
+              contextAfter: currentSelection.contextAfter
+              // No attachments
+            };
+            
+            setTimeout(() => {
+              window.selectChatInstance.setSelection(JSON.parse(JSON.stringify(selectionWithoutImages)));
+            }, 10);
+          } else {
+            // Clear selection entirely
+            window.selectChatInstance.clearSelection();
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html> 

@@ -37,6 +37,9 @@ Demonstrates integration into an existing webpage with custom styling.
 ### React Integration
 Shows how to use the library in a React application with TypeScript.
 
+### Image Selection
+Demonstrates how to implement selectable images that can be included in selection contexts along with text.
+
 ## API Keys
 
 You'll need to provide your own API keys for the LLM providers in the examples. The examples are set up to accept API keys through the UI.

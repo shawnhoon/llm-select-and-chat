@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Selection } from '../../types';
+import { Selection, Attachment } from '../../types';
 
 interface UseSelectionCaptureProps {
   autoCapture: boolean;
@@ -15,6 +15,8 @@ export const useSelectionCapture = ({
   const [selection, setSelection] = useState<Selection | null>(null);
   const [lastMouseUpTarget, setLastMouseUpTarget] = useState<EventTarget | null>(null);
   const [shortcutTriggered, setShortcutTriggered] = useState<boolean>(false);
+  // Add state for tracking selected images
+  const [selectedImages, setSelectedImages] = useState<Attachment[]>([]);
 
   // Get the full document text
   const getDocumentText = useCallback((): string => {
@@ -69,6 +71,48 @@ export const useSelectionCapture = ({
       setShortcutTriggered(false);
     }
   };
+
+  // New function to handle image selection
+  const handleImageSelection = useCallback((imageElement: HTMLImageElement, selected: boolean) => {
+    if (selected) {
+      // Add the image to selected images
+      const newImage: Attachment = {
+        id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        type: 'image',
+        name: imageElement.alt || 'Selected image',
+        url: imageElement.src,
+        mimeType: imageElement.naturalWidth ? 'image/jpeg' : 'image/png' // Assume format based on presence
+      };
+      
+      setSelectedImages(prev => [...prev, newImage]);
+      console.log('Added image to selection:', newImage);
+    } else {
+      // Remove the image from selected images
+      setSelectedImages(prev => prev.filter(img => img.url !== imageElement.src));
+      console.log('Removed image from selection');
+    }
+    
+    // Update the current selection if it exists
+    if (selection) {
+      updateSelectionWithImages();
+    }
+  }, [selection]);
+  
+  // Update existing selection with current images
+  const updateSelectionWithImages = useCallback(() => {
+    if (selection) {
+      const updatedSelection: Selection = {
+        ...selection,
+        attachments: selectedImages.length > 0 ? [...selectedImages] : undefined
+      };
+      
+      setSelection(updatedSelection);
+      
+      if (onTextSelected) {
+        onTextSelected(updatedSelection);
+      }
+    }
+  }, [selection, selectedImages, onTextSelected]);
 
   // Handle text selection
   const handleTextSelection = useCallback(() => {
@@ -165,18 +209,24 @@ export const useSelectionCapture = ({
       contextAfterLength: contextAfter?.length || 0 
     });
 
-    // Create selection object with the best context we could find
+    // Create selection object with the best context we could find and include any selected images
     const newSelection: Selection = {
       text: selectedText,
       contextBefore,
       contextAfter,
       url: window.location.href,
-      ...(extractFullDocument && { fullDocument: getDocumentText() })
+      ...(extractFullDocument && { fullDocument: getDocumentText() }),
+      ...(selectedImages.length > 0 && { attachments: [...selectedImages] })
     };
 
     // Log whether we're extracting full document or not
     console.log('Full document extraction:', extractFullDocument ? 'enabled' : 'disabled', 
       extractFullDocument ? `(${newSelection.fullDocument?.length || 0} chars)` : '');
+    
+    // Log selected images if any
+    if (selectedImages.length > 0) {
+      console.log(`Selection includes ${selectedImages.length} images`);
+    }
 
     // Set the selection and call the callback if provided
     setSelection(newSelection);
@@ -188,7 +238,7 @@ export const useSelectionCapture = ({
       console.log('Calling onTextSelected callback');
       onTextSelected(newSelection);
     }
-  }, [onTextSelected, shortcutTriggered, getDocumentContext, getDocumentText, extractFullDocument]);
+  }, [onTextSelected, shortcutTriggered, getDocumentContext, getDocumentText, extractFullDocument, selectedImages]);
 
   // Set up event listeners
   useEffect(() => {
@@ -243,12 +293,21 @@ export const useSelectionCapture = ({
   // Clear the current selection
   const clearSelection = useCallback(() => {
     setSelection(null);
+    setSelectedImages([]);
   }, []);
+
+  // Add/remove an image to/from the selection
+  const toggleImageSelection = useCallback((imageElement: HTMLImageElement) => {
+    const isAlreadySelected = selectedImages.some(img => img.url === imageElement.src);
+    handleImageSelection(imageElement, !isAlreadySelected);
+  }, [selectedImages, handleImageSelection]);
 
   return {
     selection,
     lastMouseUpTarget,
     captureSelection,
-    clearSelection
+    clearSelection,
+    toggleImageSelection,
+    selectedImages
   };
 }; 

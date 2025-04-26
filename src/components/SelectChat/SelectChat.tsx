@@ -380,7 +380,8 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       contextAfter: newSelection.contextAfter || '',
       url: newSelection.url || '',
       location: newSelection.location || '',
-      fullDocument: newSelection.fullDocument || ''
+      fullDocument: newSelection.fullDocument || '',
+      attachments: newSelection.attachments ? [...newSelection.attachments] : undefined // Include attachments
     };
     
     console.log('Created selection copy with keys:', Object.keys(selectionCopy).join(', '));
@@ -388,6 +389,8 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     console.log('Copy context after length:', selectionCopy.contextAfter?.length || 0);
     console.log('Context before sample:', selectionCopy.contextBefore?.substring(0, 50) + '...');
     console.log('Context after sample:', selectionCopy.contextAfter?.substring(0, 50) + '...');
+    console.log('Has attachments:', !!selectionCopy.attachments);
+    console.log('Attachments count:', selectionCopy.attachments?.length || 0);
     
     // Notify parent component if callback is provided and use the returned selection if available
     let finalSelection = selectionCopy;

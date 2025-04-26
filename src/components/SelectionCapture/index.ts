@@ -1,2 +1,3 @@
-export { SelectionCaptureProvider, useSelectionCaptureContext } from './SelectionCaptureProvider';
-export { useSelectionCapture } from './useSelectionCapture'; 
+export * from './SelectionCaptureProvider';
+export * from './useSelectionCapture';
+export * from './SelectableImage'; 

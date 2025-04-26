@@ -62,6 +62,7 @@ server.listen(port, () => {
   console.log(`Basic example: http://localhost:${port}/examples/basic/`);
   console.log(`Simple example: http://localhost:${port}/examples/simple/`);
   console.log(`React example: http://localhost:${port}/examples/react/`);
+  console.log(`Image Selection example: http://localhost:${port}/examples/image-selection/`);
   console.log('\nPress Ctrl+C to stop\n');
 });
 
