@@ -115,10 +115,10 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     selection?: Selection | null,
     params?: SystemPromptParams
   ): string {
-    let systemMessage = this.provider.defaultSystemPrompt || '';
+    let systemMessage = this.provider.systemPrompt?.template || '';
     
-    if (params?.systemPrompt) {
-      systemMessage = params.systemPrompt;
+    if (params?.template) {
+      systemMessage = params.template;
     }
     
     // If there's a selection, append information about it

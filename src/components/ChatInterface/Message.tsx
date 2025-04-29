@@ -10,6 +10,7 @@ interface ExtendedMessageType extends MessageType {
 interface MessageProps {
   message: ExtendedMessageType;
   showTimestamp?: boolean;
+  isUser?: boolean;
 }
 
 // Modified to include spacing for sender indicator and increase vertical spacing
@@ -380,8 +381,8 @@ const formatMessageContent = (content: string): React.ReactNode => {
   );
 };
 
-export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false }) => {
-  const isUser = message.role === 'user';
+export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false, isUser }) => {
+  const isUserMessage = isUser !== undefined ? isUser : message.role === 'user';
   const formattedTime = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const [isSelectionExpanded, setIsSelectionExpanded] = useState(false);
   
@@ -482,17 +483,14 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
   };
 
   return (
-    <MessageContainer isUser={isUser} className={`message-container message-divider ${isUser ? 'user-container' : 'assistant-container'}`}>
-      {/* Render sender indicator only for non-user messages (left side) */}
-      {!isUser && (
-        <SenderIndicator 
-          isUser={isUser} 
-          role={message.role}
-          className="sender-indicator"
-        >
-          {getInitials(message.role)}
-        </SenderIndicator>
-      )}
+    <MessageContainer isUser={isUserMessage} className={`message-container message-divider ${isUserMessage ? 'user-container' : 'assistant-container'}`}>
+      <SenderIndicator 
+        isUser={isUserMessage} 
+        role={message.role}
+        className="sender-indicator"
+      >
+        {getInitials(message.role)}
+      </SenderIndicator>
       
       <MessageWrapper>
         {message.attachments && message.attachments.length > 0 && (
@@ -511,14 +509,14 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
           </AttachmentsContainer>
         )}
         <MessageBubble 
-          isUser={isUser} 
+          isUser={isUserMessage} 
           role={message.role}
-          className={`message-bubble ${isUser ? 'user-message' : message.role === 'system' ? 'system-message' : 'assistant-message'}`}
+          className={`message-bubble ${isUserMessage ? 'user-message' : message.role === 'system' ? 'system-message' : 'assistant-message'}`}
         >
           {formatMessageContent(message.content)}
         </MessageBubble>
         
-        {message.selection && isUser && (
+        {message.selection && isUserMessage && (
           <SelectionContext>
             <SelectionHeader onClick={toggleSelectionExpanded}>
               <SelectionHeaderText>
@@ -535,24 +533,13 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
         
         <MessageMeta>
           <MessageRole>
-            {isUser ? 'You' : message.role === 'system' ? 'System' : 'Assistant'}
+            {isUserMessage ? 'You' : message.role === 'system' ? 'System' : 'Assistant'}
           </MessageRole>
           {showTimestamp && (
             <Timestamp>{formattedTime}</Timestamp>
           )}
         </MessageMeta>
       </MessageWrapper>
-      
-      {/* Render sender indicator for user messages (right side) */}
-      {isUser && (
-        <SenderIndicator 
-          isUser={isUser} 
-          role={message.role}
-          className="sender-indicator"
-        >
-          {getInitials(message.role)}
-        </SenderIndicator>
-      )}
     </MessageContainer>
   );
 }; 
