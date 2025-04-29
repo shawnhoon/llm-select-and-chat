@@ -7,6 +7,7 @@ import postcss from 'rollup-plugin-postcss';
 import dts from 'rollup-plugin-dts';
 import { readFileSync } from 'fs';
 import replace from '@rollup/plugin-replace';
+import json from '@rollup/plugin-json';
 
 // Load package.json using ES module approach
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
@@ -23,6 +24,7 @@ const baseConfig = {
     commonjs({
       include: /node_modules/,
     }),
+    json(),
     typescript({
       tsconfig: './tsconfig.json',
       exclude: ['**/__tests__', '**/*.test.ts', '**/*.test.tsx'],
@@ -68,6 +70,7 @@ const vanillaConfig = {
     commonjs({
       include: /node_modules/,
     }),
+    json(),
     replace({
       'process.env.NODE_ENV': JSON.stringify('production'),
       preventAssignment: true
