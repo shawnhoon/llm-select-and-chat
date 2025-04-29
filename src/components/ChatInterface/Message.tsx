@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Message as MessageType, Selection, Attachment } from '../../types';
+import ReactMarkdown from 'react-markdown';
+import { Components } from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 // Extend MessageType for our component since the current type definition may not include attachments
 interface ExtendedMessageType extends MessageType {
@@ -47,6 +51,31 @@ const MessageContent = styled.div`
   line-height: var(--chat-line-height-normal);
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  
+  // Styling for markdown content
+  & p {
+    margin: var(--chat-spacing-sm) 0;
+    &:first-child {
+      margin-top: 0;
+    }
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  & a {
+    color: var(--chat-color-primary);
+    text-decoration: underline;
+  }
+  
+  & ul, & ol {
+    margin: var(--chat-spacing-sm) 0;
+    padding-left: var(--chat-spacing-lg);
+  }
+  
+  & li {
+    margin-bottom: var(--chat-spacing-xs);
+  }
 `;
 
 const MessageMeta = styled.div`
@@ -164,30 +193,7 @@ const MessageBubble = styled.div<{ isUser: boolean; role: string; className?: st
     box-shadow: var(--chat-shadow-md);
   }
   
-  /* Format markdown-style content */
-  & ul, & ol {
-    margin: var(--chat-spacing-sm) 0;
-    padding-left: var(--chat-spacing-lg);
-  }
-  
-  & li {
-    margin-bottom: var(--chat-spacing-xs);
-  }
-  
-  & p {
-    margin: var(--chat-spacing-sm) 0;
-    line-height: var(--chat-line-height-normal);
-    
-    &:first-child {
-      margin-top: 0;
-    }
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-  
-  /* Code formatting */
+  /* Markdown styling */
   & pre {
     background-color: ${props => props.isUser 
       ? 'rgba(0, 0, 0, 0.05)' 
@@ -306,6 +312,40 @@ const SelectionLabel = styled.div`
   border-bottom: 1px solid var(--chat-color-border-light);
 `;
 
+const MarkdownLink = styled.a`
+  color: var(--chat-color-primary);
+  text-decoration: underline;
+  
+  &:hover {
+    text-decoration: none;
+    opacity: 0.8;
+  }
+`;
+
+const MarkdownCode = styled.code`
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px var(--chat-spacing-xs);
+  border-radius: var(--chat-border-radius-xs);
+  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: var(--chat-font-size-sm);
+`;
+
+const MarkdownPre = styled.pre`
+  background-color: var(--chat-color-surface-secondary);
+  padding: var(--chat-spacing-sm);
+  border-radius: var(--chat-border-radius-sm);
+  margin: var(--chat-spacing-sm) 0;
+  overflow-x: auto;
+  max-width: 100%;
+  
+  & code {
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+    font-size: var(--chat-font-size-sm);
+    background-color: transparent;
+    padding: 0;
+  }
+`;
+
 // Helper function to get initials from role - updated to use "YOU" instead of "U"
 const getInitials = (role: string): string => {
   switch (role) {
@@ -318,67 +358,6 @@ const getInitials = (role: string): string => {
     default:
       return role.substring(0, 1).toUpperCase();
   }
-};
-
-// Helper function to format message content with markdown-like styling
-const formatMessageContent = (content: string): React.ReactNode => {
-  if (!content) return null;
-  
-  // Basic support for code blocks (```code```)
-  const parts = content.split(/(```[\s\S]*?```)/g);
-  
-  return (
-    <MessageContent>
-      {parts.map((part, index) => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const code = part.slice(3, -3).trim();
-          return <pre key={index}>{code}</pre>;
-        }
-        
-        // Replace inline code (single backticks)
-        const inlineParts = part.split(/(`[^`]+`)/g);
-        
-        return (
-          <React.Fragment key={index}>
-            {inlineParts.map((inlinePart, i) => {
-              if (inlinePart.startsWith('`') && inlinePart.endsWith('`')) {
-                const inlineCode = inlinePart.slice(1, -1);
-                return <code key={i}>{inlineCode}</code>;
-              }
-              
-              // Replace URLs with links
-              const urlRegex = /(https?:\/\/[^\s]+)/g;
-              const textWithLinks = inlinePart.split(urlRegex);
-              
-              return (
-                <React.Fragment key={i}>
-                  {textWithLinks.map((text, j) => {
-                    if (text.match(urlRegex)) {
-                      return (
-                        <a 
-                          key={j} 
-                          href={text} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          style={{ 
-                            color: 'var(--chat-color-primary)', 
-                            textDecoration: 'underline' 
-                          }}
-                        >
-                          {text}
-                        </a>
-                      );
-                    }
-                    return text;
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </React.Fragment>
-        );
-      })}
-    </MessageContent>
-  );
 };
 
 export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false, isUser }) => {
@@ -513,7 +492,92 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
           role={message.role}
           className={`message-bubble ${isUserMessage ? 'user-message' : message.role === 'system' ? 'system-message' : 'assistant-message'}`}
         >
-          {formatMessageContent(message.content)}
+          <MessageContent>
+            <ReactMarkdown components={{
+              a: ({ node, children, ...props }) => (
+                <MarkdownLink target="_blank" rel="noopener noreferrer" {...props}>
+                  {children}
+                </MarkdownLink>
+              ),
+              code: ({ node, inline, className, children, ...props }: any) => {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline ? (
+                  <MarkdownPre>
+                    {match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        customStyle={{
+                          margin: 0,
+                          padding: 'var(--chat-spacing-sm)',
+                          borderRadius: 'var(--chat-border-radius-sm)',
+                          fontSize: 'var(--chat-font-size-sm)',
+                        }}
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    )}
+                  </MarkdownPre>
+                ) : (
+                  <MarkdownCode {...props}>{children}</MarkdownCode>
+                );
+              },
+              // Add better styling for blockquotes
+              blockquote: ({ node, ...props }) => (
+                <blockquote
+                  style={{
+                    borderLeft: '3px solid var(--chat-color-border)',
+                    paddingLeft: 'var(--chat-spacing-sm)',
+                    margin: 'var(--chat-spacing-sm) 0',
+                    color: 'var(--chat-color-text-secondary)',
+                    fontStyle: 'italic'
+                  }}
+                  {...props}
+                />
+              ),
+              // Style tables nicely
+              table: ({ node, ...props }) => (
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <table
+                    style={{
+                      borderCollapse: 'collapse',
+                      width: '100%',
+                      marginBottom: 'var(--chat-spacing-md)'
+                    }}
+                    {...props}
+                  />
+                </div>
+              ),
+              th: ({ node, ...props }) => (
+                <th
+                  style={{
+                    borderBottom: '2px solid var(--chat-color-border)',
+                    padding: 'var(--chat-spacing-xs) var(--chat-spacing-sm)',
+                    textAlign: 'left',
+                    fontWeight: 'var(--chat-font-weight-bold)'
+                  }}
+                  {...props}
+                />
+              ),
+              td: ({ node, ...props }) => (
+                <td
+                  style={{
+                    borderBottom: '1px solid var(--chat-color-border-light)',
+                    padding: 'var(--chat-spacing-xs) var(--chat-spacing-sm)'
+                  }}
+                  {...props}
+                />
+              ),
+            }}>
+              {message.content || ''}
+            </ReactMarkdown>
+          </MessageContent>
         </MessageBubble>
         
         {message.selection && isUserMessage && (
