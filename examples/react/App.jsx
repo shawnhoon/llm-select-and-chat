@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
 // Import from the root package, including the theme utility and system prompts
 import { SelectChat, createTheme, defaultSystemPrompts, getSystemPrompt } from '../../src';
-import './styles.css';
 
+const TestButton = styled.button`
+  background: red;
+  color: white;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 18px;
+  margin: 16px 0;
+`;
+
+//import '../../dist/style.css';
 function App() {
   const [apiKey, setApiKey] = useState('');
   const [themeChoice, setThemeChoice] = useState('light');
@@ -131,6 +141,7 @@ function App() {
 
   return (
     <div className={`app-container ${themeChoice}-theme`}>
+      <TestButton>Test Styled Button</TestButton>
       <header className="app-header">
         <h1>SelectChat React Example</h1>
       </header>

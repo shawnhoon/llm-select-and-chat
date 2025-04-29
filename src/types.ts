@@ -42,6 +42,20 @@ export interface Attachment {
   mimeType?: string;
 }
 
+export interface OptimizedAttachment extends Omit<Attachment, 'data'> {
+  data: Blob;
+  width?: number;
+  height?: number;
+  originalSize?: number;
+  optimizedSize?: number;
+}
+
+export interface ImagePreviewProps {
+  attachment: OptimizedAttachment;
+  onRemove: () => void;
+  className?: string;
+}
+
 export interface Annotation {
   id: string;
   text: string;
@@ -135,4 +149,46 @@ export interface SelectChatProps {
    * @param message The message that was received or sent.
    */
   onMessage?: (message: Message) => void;
+}
+
+export interface LLMRequestParams {
+  messages: Message[];
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  model?: string;
+  stream?: boolean;
+}
+
+export interface SystemPromptParams {
+  template: string;
+  useSearch?: boolean;
+  contextLevels?: {
+    primary?: boolean;
+    immediate?: boolean;
+    local?: boolean;
+    broader?: boolean;
+    conversational?: boolean;
+    external?: boolean;
+  };
+}
+
+export interface ProviderConfig {
+  type: 'openai' | 'gemini' | 'claude' | 'custom';
+  id?: string;
+  name?: string;
+  apiKey: string;
+  baseUrl?: string;
+  models?: Array<{ id: string; name: string; maxTokens: number }>;
+  defaultParams: {
+    model: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+  };
+  systemPrompt?: SystemPromptParams;
 } 
