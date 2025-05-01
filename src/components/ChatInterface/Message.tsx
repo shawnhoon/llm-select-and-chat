@@ -360,6 +360,14 @@ const getInitials = (role: string): string => {
   }
 };
 
+// Helper function to format content for proper markdown rendering
+const formatMarkdown = (content: string): string => {
+  if (!content) return '';
+  
+  // Convert "• " bullet points to proper markdown "- "
+  return content.replace(/^(\s*)•\s+/gm, '$1- ');
+};
+
 export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false, isUser }) => {
   const isUserMessage = isUser !== undefined ? isUser : message.role === 'user';
   const formattedTime = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -575,7 +583,7 @@ export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false
                 />
               ),
             }}>
-              {message.content || ''}
+              {formatMarkdown(message.content || '')}
             </ReactMarkdown>
           </MessageContent>
         </MessageBubble>
