@@ -54,7 +54,7 @@ const MessageContent = styled.div`
   
   // Styling for markdown content
   & p {
-    margin: var(--chat-spacing-sm) 0;
+    margin: var(--chat-spacing-xs) 0; /* Reduced from var(--chat-spacing-sm) */
     &:first-child {
       margin-top: 0;
     }
@@ -63,13 +63,18 @@ const MessageContent = styled.div`
     }
   }
   
+  & h1, & h2, & h3, & h4, & h5, & h6 {
+    margin-top: var(--chat-spacing-sm);
+    margin-bottom: var(--chat-spacing-xs);
+  }
+  
   & a {
     color: var(--chat-color-primary);
     text-decoration: underline;
   }
   
   & ul, & ol {
-    margin: var(--chat-spacing-sm) 0;
+    margin: var(--chat-spacing-xs) 0; /* Reduced from var(--chat-spacing-sm) */
     padding-left: var(--chat-spacing-lg);
   }
   
@@ -365,7 +370,12 @@ const formatMarkdown = (content: string): string => {
   if (!content) return '';
   
   // Convert "• " bullet points to proper markdown "- "
-  return content.replace(/^(\s*)•\s+/gm, '$1- ');
+  let formatted = content.replace(/^(\s*)•\s+/gm, '$1- ');
+  
+  // Collapse multiple blank lines into a single blank line
+  formatted = formatted.replace(/\n{3,}/g, '\n\n');
+  
+  return formatted;
 };
 
 export const Message: React.FC<MessageProps> = ({ message, showTimestamp = false, isUser }) => {

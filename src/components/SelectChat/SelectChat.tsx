@@ -423,6 +423,24 @@ export const SelectChat: React.FC<SelectChatProps> = ({
     }
   };
   
+  // Handle selection clearing
+  const handleSelectionCleared = () => {
+    console.log('%c SELECTION CLEARED', 'background: #F44336; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    
+    // Clear the selection state
+    setSelection(null);
+    
+    // Update the conversation's updatedAt timestamp to trigger a refresh
+    const updatedConversation = {
+      ...conversation,
+      updatedAt: Date.now()
+    };
+    
+    if (onConversationUpdate) {
+      onConversationUpdate(updatedConversation);
+    }
+  };
+  
   // Handle sending a new message
   const handleSendMessage = async (content: string, attachments?: Attachment[]) => {
     try {
@@ -638,6 +656,7 @@ export const SelectChat: React.FC<SelectChatProps> = ({
       <SelectChatContainer className="select-chat-container">
         <SelectionCaptureProvider 
           onTextSelected={handleSelectionCapture}
+          onSelectionCleared={handleSelectionCleared}
           extractFullDocument={extractFullDocument}
         >
           <ChatInterface

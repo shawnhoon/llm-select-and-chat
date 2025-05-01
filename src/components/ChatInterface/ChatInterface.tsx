@@ -5,6 +5,7 @@ import { Message as MessageType, Conversation, UserPreferences, LLMProvider, Sel
 import { Message } from './Message';
 import { ProviderSelector } from './ProviderSelector';
 import { chatTheme } from './theme';
+import { useSelectionCaptureContext } from '../SelectionCapture';
 
 // Simple icon components
 const ChevronUpIcon = ({ size = 16 }) => (
@@ -941,7 +942,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Add a helper method to handle clearing the selection
   const handleClearSelection = () => {
     if (currentSelection) {
-      setCurrentSelection(null);
+      try {
+        // Get access to the clearSelection function from the context
+        const { clearSelection } = useSelectionCaptureContext();
+        
+        // Call the clearSelection function from the context
+        clearSelection();
+      } catch (error) {
+        // Fallback to just clearing local state if context not available
+        console.warn('Selection context not available, falling back to local state clear');
+        setCurrentSelection(null);
+      }
     }
   };
   

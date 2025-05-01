@@ -22,6 +22,7 @@ interface SelectionCaptureProviderProps {
   children: ReactNode;
   autoCapture?: boolean;
   onTextSelected?: (selection: Selection) => void;
+  onSelectionCleared?: () => void;
   extractFullDocument?: boolean;
 }
 
@@ -29,11 +30,13 @@ export const SelectionCaptureProvider: React.FC<SelectionCaptureProviderProps> =
   children,
   autoCapture = true,
   onTextSelected,
+  onSelectionCleared,
   extractFullDocument = false,
 }) => {
   const { selection, captureSelection, clearSelection } = useSelectionCapture({
     autoCapture,
     onTextSelected,
+    onSelectionCleared,
     extractFullDocument,
   });
 

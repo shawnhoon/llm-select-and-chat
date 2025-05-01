@@ -4,12 +4,14 @@ import { Selection } from '../../types';
 interface UseSelectionCaptureProps {
   autoCapture: boolean;
   onTextSelected?: (selection: Selection) => void;
+  onSelectionCleared?: () => void;
   extractFullDocument?: boolean;
 }
 
 export const useSelectionCapture = ({ 
   autoCapture, 
   onTextSelected,
+  onSelectionCleared,
   extractFullDocument = false
 }: UseSelectionCaptureProps) => {
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -243,7 +245,11 @@ export const useSelectionCapture = ({
   // Clear the current selection
   const clearSelection = useCallback(() => {
     setSelection(null);
-  }, []);
+    if (onSelectionCleared) {
+      console.log('Calling onSelectionCleared callback');
+      onSelectionCleared();
+    }
+  }, [onSelectionCleared]);
 
   return {
     selection,
