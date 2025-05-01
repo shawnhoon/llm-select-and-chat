@@ -128,11 +128,12 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
     // Process selection if present
     let processedMessages = [...messages];
     
-    // If we have a selection, add it to the first user message
+    // If we have a selection object, add content to the first user message
     if (selection) {
       const firstUserIndex = processedMessages.findIndex(m => m.role === 'user');
       if (firstUserIndex >= 0) {
-        // Format the selection with context
+        // Format the selection with context - this will include the full document
+        // even if no specific text is selected
         const selectionText = this.formatSelectionWithContext(selection);
         
         // Log document sizes for debugging
@@ -171,9 +172,11 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
       });
     }
 
+    // Get the model name once for all the checks below
+    const modelName = this.provider.defaultParams.model;
+    
     // Add developer message for o4-mini model to enable markdown formatting
-    const model = this.provider.defaultParams.model;
-    if (isO4MiniModel(model)) {
+    if (isO4MiniModel(modelName)) {
       formattedMessages.unshift({
         role: 'developer',
         content: [{
@@ -184,7 +187,10 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
     }
     
     // Prepare the request body
-    const modelName = this.provider.defaultParams.model;
+    const requestBody: OpenAICompletionRequest = {
+      model: modelName,
+      messages: formattedMessages
+    };
     
     // Ensure we have an appropriate maxTokens value for processing large documents
     // For o4 models, increase the default max tokens for handling large documents
@@ -194,11 +200,6 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
       console.log(`📊 Adjusting maxTokens for ${modelName} from ${maxTokens || 'default'} to 32000 for large context window`);
       maxTokens = 32000;
     }
-    
-    const requestBody: OpenAICompletionRequest = {
-      model,
-      messages: formattedMessages
-    };
     
     // Add temperature parameter if supported by the model
     if (this.provider.defaultParams.temperature !== undefined && !requiresDefaultTemperature(modelName)) {

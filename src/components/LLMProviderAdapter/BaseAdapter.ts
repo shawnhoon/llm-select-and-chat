@@ -249,12 +249,19 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
         formattedPrompt += `\nSource: ${selection.url}`;
       }
       if (selection.location) {
-        formattedPrompt += `\nLocation: ${selection.location}`;
+        formattedPrompt += `\nLocation: ${selection.location || 'Document'}`;
       }
-      formattedPrompt += `\nSelection Length: ${selection.text.length} characters`;
+      
+      // Check for the case where text selection is empty but full document is available
+      if (selection.text && selection.text.length > 0) {
+        formattedPrompt += `\nSelection Length: ${selection.text.length} characters`;
+      } else if (selection.fullDocument) {
+        formattedPrompt += `\nLocation: Complete Document`;
+        formattedPrompt += `\nSelection Length: 0 characters`;
+      }
       
       // Add context info
-      if (selection.contextBefore || selection.contextAfter) {
+      if (selection.text && selection.text.length > 0 && (selection.contextBefore || selection.contextAfter)) {
         formattedPrompt += `\nContext: Available ${selection.contextBefore ? 'before' : ''}${selection.contextBefore && selection.contextAfter ? ' and ' : ''}${selection.contextAfter ? 'after' : ''} selection`;
       }
       
@@ -275,17 +282,25 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
     
     // Log the selection context for debugging
     console.log('%c📝 FORMATTING SELECTION CONTEXT', 'background: #3F51B5; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
+    console.log('Selection text length:', selection.text?.length || 0);
     console.log('Context before length:', selection.contextBefore?.length || 0);
     console.log('Context after length:', selection.contextAfter?.length || 0);
     console.log('Full document length:', selection.fullDocument?.length || 0);
     
-    if (selection.contextBefore) {
+    // Only add context before if there is selected text
+    if (selection.text && selection.contextBefore) {
       formattedText += `Context before selection: "${selection.contextBefore}"\n\n`;
     }
     
-    formattedText += `Selected text: "${selection.text}"\n\n`;
+    // Add selected text - if empty, note that the full document is being used
+    if (selection.text) {
+      formattedText += `Selected text: "${selection.text}"\n\n`;
+    } else {
+      formattedText += `Selected text: ""\n\n`;
+    }
     
-    if (selection.contextAfter) {
+    // Only add context after if there is selected text
+    if (selection.text && selection.contextAfter) {
       formattedText += `Context after selection: "${selection.contextAfter}"`;
     }
     
@@ -297,7 +312,7 @@ export abstract class AbstractLLMAdapter implements BaseLLMAdapter {
       // Log detailed info about the document
       console.log('%c📄 FULL DOCUMENT DETAILS', 'background: #FF9800; color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;');
       console.log('Document length:', selection.fullDocument.length, 'characters');
-      console.log('Selection in document:', selection.fullDocument.includes(selection.text));
+      console.log('Selection in document:', selection.text ? selection.fullDocument.includes(selection.text) : 'No selection');
       
       // Always include the full document if it's present, as it was explicitly provided
       // This overrides the previous behavior of checking if it differs from combined context
