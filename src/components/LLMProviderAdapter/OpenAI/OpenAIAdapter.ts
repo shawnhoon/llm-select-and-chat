@@ -71,6 +71,11 @@ function requiresDefaultTemperature(modelName: string): boolean {
   return defaultTempModels.some(model => modelName.toLowerCase().includes(model.toLowerCase()));
 }
 
+// Helper function to check if model is o4-mini
+function isO4MiniModel(modelName: string): boolean {
+  return modelName.toLowerCase().includes('o4-mini');
+}
+
 export class OpenAIAdapter extends AbstractLLMAdapter {
   private apiEndpoint: string;
   
@@ -165,16 +170,28 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
         content: systemPrompt
       });
     }
+
+    // Add developer message for o4-mini model to enable markdown formatting
+    const model = this.provider.defaultParams.model;
+    if (isO4MiniModel(model)) {
+      formattedMessages.unshift({
+        role: 'developer',
+        content: [{
+          type: 'text',
+          text: 'Formatting re-enabled'
+        }]
+      });
+    }
     
     // Prepare the request body
-    const model = this.provider.defaultParams.model;
+    const modelName = this.provider.defaultParams.model;
     
     // Ensure we have an appropriate maxTokens value for processing large documents
     // For o4 models, increase the default max tokens for handling large documents
     let maxTokens = this.provider.defaultParams.maxTokens;
-    if ((model.includes('o4') || model.includes('gpt-4.1') || model.includes('gemini-2.0')) && 
+    if ((modelName.includes('o4') || modelName.includes('gpt-4.1') || modelName.includes('gemini-2.0')) && 
         (!maxTokens || maxTokens < 32000)) {
-      console.log(`📊 Adjusting maxTokens for ${model} from ${maxTokens || 'default'} to 32000 for large context window`);
+      console.log(`📊 Adjusting maxTokens for ${modelName} from ${maxTokens || 'default'} to 32000 for large context window`);
       maxTokens = 32000;
     }
     
@@ -184,14 +201,14 @@ export class OpenAIAdapter extends AbstractLLMAdapter {
     };
     
     // Add temperature parameter if supported by the model
-    if (this.provider.defaultParams.temperature !== undefined && !requiresDefaultTemperature(model)) {
+    if (this.provider.defaultParams.temperature !== undefined && !requiresDefaultTemperature(modelName)) {
       requestBody.temperature = this.provider.defaultParams.temperature;
     }
     
     // Add max tokens parameter if specified
     if (maxTokens !== undefined) {
       // Only add max tokens for models that support non-default temperature
-      if (isModelWithNewTokenFormat(model)) {
+      if (isModelWithNewTokenFormat(modelName)) {
         requestBody.max_completion_tokens = maxTokens;
       } else {
         requestBody.max_tokens = maxTokens;
